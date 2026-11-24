@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check } from 'lucide-react';
+import { X } from 'lucide-react';
 import { inventarioService } from '../../services/api';
 
 interface StockAjusteModalProps {
@@ -46,80 +46,80 @@ export const StockAjusteModal: React.FC<StockAjusteModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200">
-        <div className="bg-slate-900 px-6 py-4 flex justify-between items-center text-white">
-          <h3 className="font-bold text-base">Ajuste de Stock / Kardex</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 z-50">
+      <div className="glass card max-w-md w-full p-6 shadow-pop animate-pop border border-line">
+        <div className="flex justify-between items-center border-b border-line pb-3 mb-4">
+          <h3 className="font-display font-bold text-base text-ink">Ajuste de Stock / Kardex</h3>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-full text-ink-muted hover:text-ink hover:bg-surface-3 transition"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <span className="text-xs text-slate-500 uppercase font-semibold">Producto</span>
-            <p className="font-bold text-slate-800 text-sm mt-0.5">{producto.nombre}</p>
-            <p className="text-xs text-emerald-600 font-medium">Stock actual: {producto.stock_actual} unidades</p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="card bg-surface-2 p-3 border-line">
+            <span className="text-[11px] text-ink-faint uppercase font-semibold">Producto</span>
+            <p className="font-bold text-ink text-sm mt-0.5">{producto.nombre}</p>
+            <p className="text-xs text-brand-500 font-medium mt-0.5">
+              Stock actual: <span className="font-mono font-bold">{producto.stock_actual}</span> unidades
+            </p>
           </div>
 
           {error && (
-            <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl text-center">
+            <div className="p-2.5 bg-danger-soft border border-danger/30 text-danger text-xs rounded-chip text-center font-medium">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Tipo de Movimiento</label>
+            <label className="label mb-1">Tipo de Movimiento</label>
             <select
               value={tipo}
               onChange={(e: any) => setTipo(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+              className="w-full text-xs font-medium"
             >
               <option value="compra">Compra / Entrada de Proveedor (+)</option>
-              <option value="ajuste_positivo">Ajuste Positivo por Inventario Físico (+)</option>
+              <option value="ajuste_positivo">Ajuste Positivo por Conteo Físico (+)</option>
               <option value="ajuste_negativo">Merma / Descarte / Ajuste Negativo (-)</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Cantidad de Unidades</label>
+            <label className="label mb-1">Cantidad de Unidades</label>
             <input
               type="number"
               min="1"
               required
               value={cantidad}
               onChange={(e) => setCantidad(Number(e.target.value))}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 font-bold"
+              className="w-full font-display text-kpi text-center font-bold"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Motivo / Justificación</label>
+            <label className="label mb-1">Motivo / Justificación</label>
             <input
               type="text"
               required
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
-              placeholder="Ej: Factura F001-234 o Merma por vencimiento"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+              placeholder="Ej: Ingreso de factura 001-230 o merma por rotura"
+              className="w-full text-xs"
             />
           </div>
 
-          <div className="flex space-x-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 border border-slate-200 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50"
-            >
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={onClose} className="btn-ghost flex-1 h-12 text-xs">
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-md shadow-emerald-600/20"
+              className="btn-primary flex-1 h-12 shadow-hero text-xs font-bold"
             >
-              <Check className="w-4 h-4" />
-              <span>{loading ? 'Guardando...' : 'Guardar Ajuste'}</span>
+              {loading ? 'Guardando...' : 'Confirmar Ajuste'}
             </button>
           </div>
         </form>

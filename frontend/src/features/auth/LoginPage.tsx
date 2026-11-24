@@ -41,53 +41,56 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-slate-800/80 backdrop-blur border border-slate-700 rounded-2xl p-8 shadow-2xl">
+    <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
+      <div className="card max-w-[420px] w-full p-8 shadow-card border border-line">
+        {/* Header con isotipo hero */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20 text-white">
+          <div className="w-16 h-16 bg-brand-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-hero text-white">
             <Store className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Minimarket El Buen Vecino</h2>
-          <p className="text-sm text-slate-400 mt-1">Punto de venta y gestión predictiva de inventarios</p>
+          <h2 className="font-display text-2xl font-bold text-ink tracking-tight">
+            El Buen Vecino
+          </h2>
+          <p className="text-xs text-ink-muted mt-1">Punto de venta y gestión predictiva de inventarios</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm text-center">
+          <div className="mb-6 p-3 bg-danger-soft border border-danger/30 rounded-chip text-danger text-xs text-center font-medium">
             {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-1.5">
+            <label className="label mb-1.5">
               Correo Electrónico
             </label>
             <div className="relative">
-              <Mail className="w-5 h-5 text-slate-400 absolute left-3 top-3" />
+              <Mail className="w-4 h-4 text-ink-faint absolute left-3.5 top-4" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ejemplo@elbuenvecino.com"
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-sm"
+                className="w-full pl-10"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-1.5">
+            <label className="label mb-1.5">
               Contraseña
             </label>
             <div className="relative">
-              <Lock className="w-5 h-5 text-slate-400 absolute left-3 top-3" />
+              <Lock className="w-4 h-4 text-ink-faint absolute left-3.5 top-4" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-sm"
+                className="w-full pl-10"
               />
             </div>
           </div>
@@ -95,7 +98,7 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2 disabled:opacity-50 mt-2"
+            className="btn-primary w-full h-14 mt-3 shadow-hero text-base"
           >
             <span>{loading ? 'Ingresando...' : 'Iniciar Sesión'}</span>
             <ArrowRight className="w-4 h-4" />
@@ -103,33 +106,37 @@ export const LoginPage: React.FC = () => {
         </form>
 
         {/* Acceso Rápido Demo / Pruebas */}
-        <div className="mt-8 pt-6 border-t border-slate-700/60">
-          <p className="text-xs text-slate-400 font-medium mb-3 text-center">
-            Cuentas de demostración preconfiguradas:
+        <div className="mt-8 pt-6 border-t border-line-soft">
+          <p className="text-[11px] text-ink-muted font-medium mb-3 text-center">
+            Perfiles de demostración preconfigurados:
           </p>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => handleQuickLogin('admin@elbuenvecino.com', 'admin123')}
-              className="p-2.5 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 rounded-xl text-left transition-all group"
+              className={`p-3 tile text-left transition-all group ${
+                email === 'admin@elbuenvecino.com' ? 'border-brand-500 bg-surface-3 shadow-focus' : 'hover:bg-surface-3'
+              }`}
             >
-              <div className="flex items-center space-x-1.5 text-emerald-400 text-xs font-semibold">
+              <div className="flex items-center gap-1.5 text-brand-500 text-xs font-semibold">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Administrador</span>
+                <span>Admin</span>
               </div>
-              <p className="text-[11px] text-slate-400 truncate mt-0.5">admin@elbuenvecino.com</p>
+              <p className="text-[10px] text-ink-muted truncate mt-1">Control total</p>
             </button>
 
             <button
               type="button"
-              onClick={() => handleQuickLogin('cajero1@elbuenvecino.com', 'cajero123')}
-              className="p-2.5 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 rounded-xl text-left transition-all group"
+              onClick={() => handleQuickLogin('cajero@elbuenvecino.com', 'cajero123')}
+              className={`p-3 tile text-left transition-all group ${
+                email === 'cajero@elbuenvecino.com' ? 'border-brand-500 bg-surface-3 shadow-focus' : 'hover:bg-surface-3'
+              }`}
             >
-              <div className="flex items-center space-x-1.5 text-blue-400 text-xs font-semibold">
+              <div className="flex items-center gap-1.5 text-success text-xs font-semibold">
                 <UserCheck className="w-3.5 h-3.5" />
-                <span>Cajero Caja 1</span>
+                <span>Cajero</span>
               </div>
-              <p className="text-[11px] text-slate-400 truncate mt-0.5">cajero1@elbuenvecino.com</p>
+              <p className="text-[10px] text-ink-muted truncate mt-1">Caja POS</p>
             </button>
           </div>
         </div>

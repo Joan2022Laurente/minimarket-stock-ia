@@ -49,6 +49,7 @@ data/*.parquet
 
 # Node & Frontend
 node_modules/
+.playwright-mcp/
 .npm/
 .yarn/
 dist/

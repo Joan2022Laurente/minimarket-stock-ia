@@ -12,8 +12,8 @@ export default defineConfig({
         name: 'Minimarket El Buen Vecino POS',
         short_name: 'El Buen Vecino',
         description: 'Punto de venta y control predictivo de inventarios con IA',
-        theme_color: '#10b981',
-        background_color: '#f8fafc',
+        theme_color: '#0B0B0C',
+        background_color: '#0B0B0C',
         display: 'standalone',
         orientation: 'portrait-primary',
         icons: [

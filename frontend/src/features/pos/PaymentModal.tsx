@@ -16,11 +16,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ticketVenta, setTicketVenta] = useState<VentaResponse | null>(null);
+  const [ticketItems, setTicketItems] = useState<{ nombre: string; cantidad: number; subtotal: number }[]>([]);
 
   if (!isOpen) return null;
 
   const total = getTotal();
   const vuelto = metodo === 'efectivo' ? Math.max(0, Number((montoPagado - total).toFixed(2))) : 0;
+  const saldoInsuficiente = metodo === 'efectivo' && montoPagado < total;
 
   const handleCobrar = async () => {
     setError(null);
@@ -31,16 +33,25 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
 
     setLoading(true);
     try {
+      const itemsPayload = items.map((i) => ({
+        producto_id: i.producto.id,
+        cantidad: i.cantidad,
+      }));
+
+      const cachedTicketItems = items.map((i) => ({
+        nombre: i.producto.nombre,
+        cantidad: i.cantidad,
+        subtotal: i.subtotal,
+      }));
+
       const payload = {
         metodo_pago: metodo,
         monto_pagado: metodo === 'efectivo' ? montoPagado : total,
-        items: items.map((i) => ({
-          producto_id: i.producto.id,
-          cantidad: i.cantidad,
-        })),
+        items: itemsPayload,
       };
 
       const res = await ventaService.checkout(payload);
+      setTicketItems(cachedTicketItems);
       setTicketVenta(res);
       clearCart();
     } catch (err: any) {
@@ -55,206 +66,214 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
     onClose();
   };
 
+  const quickBills = [10, 20, 50, 100, 200];
+
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200">
-        {!ticketVenta ? (
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 z-50">
+      <div className="glass card max-w-lg w-full p-6 shadow-pop animate-pop border border-line">
+        {/* Cabecera del Modal */}
+        <div className="flex justify-between items-center border-b border-line pb-4 mb-5">
           <div>
-            {/* Header Cobro */}
-            <div className="bg-slate-900 px-6 py-4 flex justify-between items-center text-white">
-              <h3 className="font-bold text-lg">Cobrar Venta</h3>
-              <button onClick={onClose} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
+            <h3 className="font-display text-lg font-bold text-ink">
+              {ticketVenta ? 'Venta Completada' : 'Finalizar Venta'}
+            </h3>
+            <p className="text-xs text-ink-muted">
+              {ticketVenta ? 'Comprobante emitido exitosamente' : 'Seleccione el método de pago y registre el cobro'}
+            </p>
+          </div>
+          <button
+            onClick={handleCerrarTodo}
+            className="p-1.5 rounded-full text-ink-muted hover:text-ink hover:bg-surface-3 transition"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-danger-soft border border-danger/30 rounded-chip text-danger text-xs font-medium">
+            {error}
+          </div>
+        )}
+
+        {!ticketVenta ? (
+          <div className="space-y-5">
+            {/* Selector de Método de Pago en Píldoras */}
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMetodo('efectivo');
+                  setMontoPagado(total);
+                }}
+                className={`h-14 rounded-tile font-semibold text-xs flex flex-col items-center justify-center gap-1 transition ${
+                  metodo === 'efectivo'
+                    ? 'bg-ink text-canvas shadow-sm'
+                    : 'bg-surface-2 text-ink-muted border border-line hover:text-ink hover:bg-surface-3'
+                }`}
+              >
+                <DollarSign className="w-4 h-4" />
+                <span>Efectivo</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMetodo('yape_plin')}
+                className={`h-14 rounded-tile font-semibold text-xs flex flex-col items-center justify-center gap-1 transition ${
+                  metodo === 'yape_plin'
+                    ? 'bg-ink text-canvas shadow-sm'
+                    : 'bg-surface-2 text-ink-muted border border-line hover:text-ink hover:bg-surface-3'
+                }`}
+              >
+                <Smartphone className="w-4 h-4" />
+                <span>Yape / Plin</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMetodo('tarjeta')}
+                className={`h-14 rounded-tile font-semibold text-xs flex flex-col items-center justify-center gap-1 transition ${
+                  metodo === 'tarjeta'
+                    ? 'bg-ink text-canvas shadow-sm'
+                    : 'bg-surface-2 text-ink-muted border border-line hover:text-ink hover:bg-surface-3'
+                }`}
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Tarjeta</span>
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* Total a Pagar Grande */}
-              <div className="bg-emerald-50 rounded-xl p-4 text-center border border-emerald-100">
-                <p className="text-xs uppercase font-semibold text-emerald-800 tracking-wider">
-                  Total a Cobrar
-                </p>
-                <p className="text-3xl font-extrabold text-emerald-700 mt-1">
-                  S/ {total.toFixed(2)}
-                </p>
+            {/* Total a pagar */}
+            <div className="card bg-surface-2 border-line text-center py-4">
+              <span className="label text-ink-muted">Total a Pagar</span>
+              <div className="font-display text-total font-bold text-ink tabular-nums mt-1">
+                S/ {total.toFixed(2)}
               </div>
+            </div>
 
-              {error && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl text-center">
-                  {error}
+            {/* Opciones Específicas para Efectivo */}
+            {metodo === 'efectivo' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="label mb-1.5">Monto Recibido en Efectivo (S/)</label>
+                  <input
+                    type="number"
+                    step="0.10"
+                    min="0"
+                    value={montoPagado || ''}
+                    onChange={(e) => setMontoPagado(Number(e.target.value))}
+                    className="w-full font-display text-kpi text-center tabular-nums"
+                  />
                 </div>
-              )}
 
-              {/* Selector de Método de Pago */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                  Método de Pago
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMetodo('efectivo');
-                      setMontoPagado(total);
-                    }}
-                    className={`p-3 rounded-xl border flex flex-col items-center justify-center space-y-1 transition-all ${
-                      metodo === 'efectivo'
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800 font-bold shadow-sm'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}
-                  >
-                    <DollarSign className="w-5 h-5" />
-                    <span className="text-xs">Efectivo</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMetodo('yape_plin');
-                      setMontoPagado(total);
-                    }}
-                    className={`p-3 rounded-xl border flex flex-col items-center justify-center space-y-1 transition-all ${
-                      metodo === 'yape_plin'
-                        ? 'border-purple-500 bg-purple-50 text-purple-800 font-bold shadow-sm'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}
-                  >
-                    <Smartphone className="w-5 h-5" />
-                    <span className="text-xs">Yape / Plin</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMetodo('tarjeta');
-                      setMontoPagado(total);
-                    }}
-                    className={`p-3 rounded-xl border flex flex-col items-center justify-center space-y-1 transition-all ${
-                      metodo === 'tarjeta'
-                        ? 'border-blue-500 bg-blue-50 text-blue-800 font-bold shadow-sm'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}
-                  >
-                    <CreditCard className="w-5 h-5" />
-                    <span className="text-xs">Tarjeta POS</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Opciones de Efectivo */}
-              {metodo === 'efectivo' && (
-                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-slate-600">Paga con (S/):</span>
-                    <input
-                      type="number"
-                      step="0.10"
-                      min={total}
-                      value={montoPagado}
-                      onChange={(e) => setMontoPagado(Number(e.target.value))}
-                      className="w-32 bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-right font-bold text-slate-900 focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-
-                  {/* Botones de billetes rápidos */}
-                  <div className="flex flex-wrap gap-1.5 justify-end">
-                    {[10, 20, 50, 100].map((billete) =>
-                      billete >= total ? (
-                        <button
-                          key={billete}
-                          type="button"
-                          onClick={() => setMontoPagado(billete)}
-                          className="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-300 rounded-lg hover:border-emerald-500 hover:text-emerald-700"
-                        >
-                          S/ {billete}
-                        </button>
-                      ) : null
-                    )}
+                {/* Chips de Billetes Rápidos */}
+                <div className="flex gap-1.5 justify-center flex-wrap">
+                  {quickBills.map((b) => (
                     <button
+                      key={b}
                       type="button"
-                      onClick={() => setMontoPagado(total)}
-                      className="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-300 rounded-lg hover:border-emerald-500 hover:text-emerald-700"
+                      onClick={() => setMontoPagado(b)}
+                      className="btn-ghost h-10 px-3.5 text-xs font-mono font-semibold"
                     >
-                      Exacto
+                      S/ {b}
                     </button>
-                  </div>
-
-                  <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-                    <span className="text-sm font-bold text-slate-700">Vuelto a entregar:</span>
-                    <span className="text-xl font-black text-emerald-600">
-                      S/ {vuelto.toFixed(2)}
-                    </span>
-                  </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setMontoPagado(total)}
+                    className="btn-ghost h-10 px-3.5 text-xs font-semibold text-brand-500 border-brand-500/30"
+                  >
+                    Exacto
+                  </button>
                 </div>
-              )}
 
-              {/* Botón de Confirmar Venta */}
+                {/* Vuelto / Saldo */}
+                <div className="flex justify-between items-center p-3 rounded-tile bg-surface-2 border border-line">
+                  <span className="text-xs text-ink-muted font-medium">
+                    {saldoInsuficiente ? 'Faltante:' : 'Vuelto a Entregar:'}
+                  </span>
+                  <span
+                    className={`pill text-sm font-bold h-8 px-4 ${
+                      saldoInsuficiente ? 'bg-danger-soft text-danger' : 'bg-success text-on-light'
+                    }`}
+                  >
+                    S/ {saldoInsuficiente ? (total - montoPagado).toFixed(2) : vuelto.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Acciones */}
+            <div className="flex gap-3 pt-2">
+              <button type="button" onClick={onClose} className="btn-ghost flex-1 h-14">
+                Cancelar
+              </button>
               <button
                 type="button"
+                disabled={loading || saldoInsuficiente}
                 onClick={handleCobrar}
-                disabled={loading}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2 disabled:opacity-50 text-base"
+                className="btn-primary flex-2 h-14 shadow-hero text-base font-bold disabled:opacity-40"
               >
-                <span>{loading ? 'Procesando en Supabase...' : 'Confirmar Venta (< 1s)'}</span>
-                <CheckCircle2 className="w-5 h-5" />
+                {loading ? 'Procesando Venta...' : 'Confirmar Cobro (Enter)'}
               </button>
             </div>
           </div>
         ) : (
-          /* Ticket de Venta Exitoso */
-          <div className="p-6 text-center space-y-4">
-            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600">
-              <CheckCircle2 className="w-10 h-10" />
+          /* Vista del Ticket Emitido sobre Papel Blanco Fijo */
+          <div className="space-y-5 animate-pop">
+            <div className="flex items-center gap-2 text-success font-semibold text-sm">
+              <CheckCircle2 className="w-5 h-5" />
+              <span>Transacción registrada en Supabase</span>
             </div>
 
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">¡Venta Registrada con Éxito!</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Transacción atómica completada en Supabase</p>
+            {/* Ticket de Papel Térmico Blanco */}
+            <div className="bg-white text-slate-900 rounded-tile p-5 shadow-inner font-mono text-xs space-y-2 border border-slate-200">
+              <div className="text-center border-b border-slate-300 pb-2">
+                <h4 className="font-bold text-sm tracking-tight">MINIMARKET EL BUEN VECINO</h4>
+                <p className="text-[10px] text-slate-500">RUC: 20123456789</p>
+                <p className="text-[10px] text-slate-500">BOLETA DE VENTA ELECTRÓNICA</p>
+                <p className="font-bold text-xs mt-1 text-slate-800">{ticketVenta.numero_ticket}</p>
+              </div>
+
+              <div className="space-y-1 py-2 border-b border-slate-300 text-[11px]">
+                {ticketItems.map((it, idx) => (
+                  <div key={idx} className="flex justify-between">
+                    <span className="truncate max-w-[180px]">
+                      {it.cantidad}x {it.nombre}
+                    </span>
+                    <span className="font-bold tabular-nums">S/ {it.subtotal.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-0.5 pt-1 text-[11px]">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>S/ {ticketVenta.subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>IGV (18%):</span>
+                  <span>S/ {ticketVenta.igv.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-sm border-t border-slate-400 pt-1">
+                  <span>TOTAL:</span>
+                  <span>S/ {ticketVenta.total.toFixed(2)}</span>
+                </div>
+              </div>
             </div>
 
-            {/* Simulación de Ticket Impreso */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left font-mono text-xs space-y-2 max-w-sm mx-auto shadow-inner">
-              <div className="text-center border-b border-dashed border-slate-300 pb-2">
-                <p className="font-bold text-sm">MINIMARKET EL BUEN VECINO</p>
-                <p className="text-[10px] text-slate-500">RUC: 20100055237 · Boleta de Venta</p>
-                <p className="font-bold text-emerald-700 mt-1">{ticketVenta.numero_ticket}</p>
-              </div>
-
-              <div className="flex justify-between text-[11px]">
-                <span>Total Ítems:</span>
-                <span>{ticketVenta.items_procesados}</span>
-              </div>
-              <div className="flex justify-between text-[11px]">
-                <span>Subtotal:</span>
-                <span>S/ {Number(ticketVenta.subtotal).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-[11px]">
-                <span>IGV (18%):</span>
-                <span>S/ {Number(ticketVenta.igv).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm font-bold border-t border-dashed border-slate-300 pt-1 text-slate-900">
-                <span>TOTAL:</span>
-                <span>S/ {Number(ticketVenta.total).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-[11px]">
-                <span>Vuelto:</span>
-                <span>S/ {Number(ticketVenta.vuelto).toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div className="flex space-x-2 pt-2">
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="flex-1 border border-slate-300 hover:bg-slate-100 font-semibold py-2.5 rounded-xl text-slate-700 text-sm flex items-center justify-center space-x-2"
+                className="btn-ghost flex-1 h-12 flex items-center justify-center gap-2"
               >
                 <Printer className="w-4 h-4" />
-                <span>Imprimir</span>
+                <span>Imprimir Ticket</span>
               </button>
               <button
                 type="button"
                 onClick={handleCerrarTodo}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-sm shadow-md shadow-emerald-600/20"
+                className="btn-primary flex-1 h-12 shadow-hero font-bold"
               >
                 Nueva Venta
               </button>
