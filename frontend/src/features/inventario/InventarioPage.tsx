@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Search,
   PlusCircle,
@@ -57,7 +57,7 @@ export const InventarioPage: React.FC = () => {
       {/* 3 Tarjetas KPI Superiores de Inventario Real con Estética FinPoint */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {/* Crítico */}
-        <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
               Stock Crítico
@@ -78,7 +78,7 @@ export const InventarioPage: React.FC = () => {
         </div>
 
         {/* Bajo */}
-        <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
               Stock Bajo
@@ -99,7 +99,7 @@ export const InventarioPage: React.FC = () => {
         </div>
 
         {/* Óptimo */}
-        <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
               Stock Saludable
@@ -121,7 +121,7 @@ export const InventarioPage: React.FC = () => {
       </div>
 
       {/* Contenedor Principal: Filtros y Tabla */}
-      <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card space-y-5">
+      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card space-y-5">
         {/* Pestañas y Filtros */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-white/[0.06]">
           {/* Pestañas en Píldora */}

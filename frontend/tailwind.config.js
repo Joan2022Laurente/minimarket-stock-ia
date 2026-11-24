@@ -8,10 +8,9 @@ export default {
         card: '#141416',
         subcard: '#1C1C1F',
         hovercard: '#222226',
-        hero: {
-          start: '#FF5B26',
-          mid: '#FF4A15',
-          end: '#E63900',
+        brand: {
+          DEFAULT: '#FF4A15',
+          hover: '#E63900',
         },
         mint: {
           DEFAULT: '#34D399',
@@ -26,9 +25,10 @@ export default {
         mono: ['"JetBrains Mono"', 'monospace'],
       },
       borderRadius: {
-        'fin-card': '28px',
-        'fin-tile': '20px',
-        'fin-pill': '9999px',
+        card: 'var(--radius-card, 28px)',
+        tile: 'var(--radius-tile, 20px)',
+        chip: 'var(--radius-chip, 12px)',
+        pill: 'var(--radius-full, 9999px)',
       },
       boxShadow: {
         hero: '0 24px 60px -15px rgba(255, 74, 21, 0.4)',

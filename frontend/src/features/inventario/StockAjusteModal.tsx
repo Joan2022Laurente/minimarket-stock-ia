@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { inventarioService } from '../../services/api';
 
@@ -47,7 +47,7 @@ export const StockAjusteModal: React.FC<StockAjusteModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <div className="bg-[#141416] rounded-[28px] border border-white/[0.1] max-w-md w-full p-7 shadow-2xl animate-pop text-white">
+      <div className="bg-[#141416] rounded-card border border-white/[0.1] max-w-md w-full p-7 shadow-2xl animate-pop text-white">
         <div className="flex justify-between items-center pb-3 border-b border-white/[0.08] mb-4">
           <h3 className="font-extrabold text-base text-white">Ajuste de Stock / Kardex</h3>
           <button
@@ -59,7 +59,7 @@ export const StockAjusteModal: React.FC<StockAjusteModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="bg-[#1C1C1F] p-4 rounded-[20px] border border-white/[0.06]">
+          <div className="bg-[#1C1C1F] p-4 rounded-tile border border-white/[0.06]">
             <span className="text-[11px] text-[#8E8E93] uppercase font-bold tracking-wider">Producto</span>
             <p className="font-bold text-white text-sm mt-0.5">{producto.nombre}</p>
             <p className="text-xs text-[#FF4A15] font-semibold mt-1">

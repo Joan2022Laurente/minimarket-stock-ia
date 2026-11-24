@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   ScanBarcode,
@@ -105,7 +105,7 @@ export const POSPage: React.FC = () => {
       {/* Columna Izquierda: Búsqueda y Catálogo de Productos del Minimarket */}
       <div className="flex flex-col gap-5">
         {/* Barra de Filtros y Entradas */}
-        <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-5 shadow-card space-y-4">
+        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-5 shadow-card space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-extrabold text-white tracking-tight">
@@ -185,7 +185,7 @@ export const POSPage: React.FC = () => {
           {loading ? (
             <div className="p-12 text-center text-[#8E8E93] text-sm">Cargando catálogo...</div>
           ) : productos.length === 0 ? (
-            <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-12 text-center text-[#8E8E93] text-sm">
+            <div className="bg-[#141416] rounded-card border border-white/[0.08] p-12 text-center text-[#8E8E93] text-sm">
               No se encontraron productos coincidentes.
             </div>
           ) : (
@@ -199,7 +199,7 @@ export const POSPage: React.FC = () => {
                     key={prod.id}
                     disabled={out}
                     onClick={() => triggerAddItem(prod)}
-                    className={`group relative flex flex-col justify-between min-h-[148px] p-4 text-left rounded-[24px] border transition-all duration-150 ${
+                    className={`group relative flex flex-col justify-between min-h-[148px] p-4 text-left rounded-tile border transition-all duration-150 ${
                       out
                         ? 'bg-[#141416] border-white/[0.04] opacity-50 cursor-not-allowed bg-hatch-pattern'
                         : justAdded
@@ -252,7 +252,7 @@ export const POSPage: React.FC = () => {
       </div>
 
       {/* Columna Derecha: Carrito de Compras en Tarjeta FinPoint */}
-      <aside className="sticky top-20 flex h-[calc(100vh-6.5rem)] flex-col justify-between bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card text-white">
+      <aside className="sticky top-20 flex h-[calc(100vh-6.5rem)] flex-col justify-between bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card text-white">
         {/* Cabecera del Carrito */}
         <div>
           <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
@@ -291,7 +291,7 @@ export const POSPage: React.FC = () => {
         {/* Lista de Ítems en Carrito */}
         <div className="flex-1 overflow-y-auto space-y-2 pr-1 my-2">
           {items.length === 0 ? (
-            <div className="h-full min-h-[180px] flex flex-col items-center justify-center p-6 text-center rounded-[20px] bg-[#1C1C1F] bg-hatch-pattern border border-white/[0.04]">
+            <div className="h-full min-h-[180px] flex flex-col items-center justify-center p-6 text-center rounded-tile bg-[#1C1C1F] bg-hatch-pattern border border-white/[0.04]">
               <Store className="w-8 h-8 text-[#5C5C62] mb-2" />
               <p className="font-bold text-xs text-white">Carrito Vacío</p>
               <p className="text-[11px] text-[#8E8E93] mt-0.5">
@@ -302,7 +302,7 @@ export const POSPage: React.FC = () => {
             items.map((it) => (
               <div
                 key={it.producto.id}
-                className="bg-[#1C1C1F] rounded-[18px] p-3 border border-white/[0.04] flex items-center justify-between gap-3"
+                className="bg-[#1C1C1F] rounded-tile p-3 border border-white/[0.04] flex items-center justify-between gap-3"
               >
                 <div className="min-w-0 flex-1">
                   <p className="font-bold text-xs text-white truncate">{it.producto.nombre}</p>

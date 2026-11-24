@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layers, Lock, Mail, ArrowRight, ShieldCheck, UserCheck } from 'lucide-react';
 import { authService } from '../../services/api';
@@ -42,7 +42,7 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0A0C] flex items-center justify-center p-4 selection:bg-[#FF4A15] selection:text-white">
-      <div className="bg-[#141416] rounded-[32px] border border-white/[0.08] max-w-[440px] w-full p-8 sm:p-10 shadow-2xl relative overflow-hidden">
+      <div className="bg-[#141416] rounded-card border border-white/[0.08] max-w-[440px] w-full p-8 sm:p-10 shadow-2xl relative overflow-hidden">
         {/* Glow sutil de fondo */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-[#FF4A15]/10 blur-3xl pointer-events-none"></div>
 
@@ -120,7 +120,7 @@ export const LoginPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleQuickLogin('admin@elbuenvecino.com', 'admin123')}
-              className={`p-3 rounded-[20px] text-left transition-all bg-[#1C1C1F] border ${
+              className={`p-3 rounded-tile text-left transition-all bg-[#1C1C1F] border ${
                 email === 'admin@elbuenvecino.com'
                   ? 'border-[#FF4A15] shadow-[0_0_15px_rgba(255,74,21,0.25)]'
                   : 'border-white/[0.06] hover:border-white/20'
@@ -136,7 +136,7 @@ export const LoginPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleQuickLogin('cajero@elbuenvecino.com', 'cajero123')}
-              className={`p-3 rounded-[20px] text-left transition-all bg-[#1C1C1F] border ${
+              className={`p-3 rounded-tile text-left transition-all bg-[#1C1C1F] border ${
                 email === 'cajero@elbuenvecino.com'
                   ? 'border-[#34D399] shadow-[0_0_15px_rgba(52,211,153,0.25)]'
                   : 'border-white/[0.06] hover:border-white/20'

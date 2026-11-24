@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { DollarSign, Smartphone, CreditCard, X, Printer, CheckCircle2 } from 'lucide-react';
 import { ventaService } from '../../services/api';
 import { useCartStore } from '../../stores/useCartStore';
@@ -70,7 +70,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <div className="bg-[#141416] rounded-[28px] border border-white/[0.1] max-w-lg w-full p-7 shadow-2xl animate-pop text-white">
+      <div className="bg-[#141416] rounded-card border border-white/[0.1] max-w-lg w-full p-7 shadow-2xl animate-pop text-white">
         {/* Cabecera */}
         <div className="flex justify-between items-center pb-4 border-b border-white/[0.08] mb-5">
           <div>
@@ -105,7 +105,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                   setMetodo('efectivo');
                   setMontoPagado(total);
                 }}
-                className={`h-14 rounded-[20px] font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition-all ${
+                className={`h-14 rounded-tile font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition-all ${
                   metodo === 'efectivo'
                     ? 'bg-white text-black shadow-lg scale-100'
                     : 'bg-[#1C1C1F] text-[#8E8E93] border border-white/[0.06] hover:text-white'
@@ -118,7 +118,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
               <button
                 type="button"
                 onClick={() => setMetodo('yape_plin')}
-                className={`h-14 rounded-[20px] font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition-all ${
+                className={`h-14 rounded-tile font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition-all ${
                   metodo === 'yape_plin'
                     ? 'bg-white text-black shadow-lg scale-100'
                     : 'bg-[#1C1C1F] text-[#8E8E93] border border-white/[0.06] hover:text-white'
@@ -131,7 +131,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
               <button
                 type="button"
                 onClick={() => setMetodo('tarjeta')}
-                className={`h-14 rounded-[20px] font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition-all ${
+                className={`h-14 rounded-tile font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition-all ${
                   metodo === 'tarjeta'
                     ? 'bg-white text-black shadow-lg scale-100'
                     : 'bg-[#1C1C1F] text-[#8E8E93] border border-white/[0.06] hover:text-white'
@@ -143,7 +143,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
             </div>
 
             {/* Total Grande */}
-            <div className="bg-[#1C1C1F] rounded-[22px] border border-white/[0.06] text-center py-5">
+            <div className="bg-[#1C1C1F] rounded-tile border border-white/[0.06] text-center py-5">
               <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider">
                 Total a Pagar
               </span>
@@ -191,7 +191,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                 </div>
 
                 {/* Vuelto */}
-                <div className="flex justify-between items-center p-3.5 rounded-[18px] bg-[#1C1C1F] border border-white/[0.06]">
+                <div className="flex justify-between items-center p-3.5 rounded-tile bg-[#1C1C1F] border border-white/[0.06]">
                   <span className="text-xs text-[#8E8E93] font-semibold">
                     {saldoInsuficiente ? 'Faltante:' : 'Vuelto a Entregar:'}
                   </span>
@@ -235,7 +235,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
               <span>Transacción Atómica Registrada</span>
             </div>
 
-            <div className="bg-white text-slate-900 rounded-[20px] p-5 font-mono text-xs space-y-2 shadow-inner">
+            <div className="bg-white text-slate-900 rounded-tile p-5 font-mono text-xs space-y-2 shadow-inner">
               <div className="text-center border-b border-slate-300 pb-2">
                 <h4 className="font-extrabold text-sm text-slate-900">MINIMARKET EL BUEN VECINO</h4>
                 <p className="text-[10px] text-slate-500">BOLETA ELECTRÓNICA: {ticketVenta.numero_ticket}</p>

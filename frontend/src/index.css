@@ -17,6 +17,12 @@
     --hero-orange: #FF4A15;
     --accent-mint: #34D399;
     --accent-yellow: #FFD21F;
+
+    /* Escala Global de Border Radius */
+    --radius-card: 28px;
+    --radius-tile: 20px;
+    --radius-chip: 12px;
+    --radius-full: 9999px;
   }
 
   html {

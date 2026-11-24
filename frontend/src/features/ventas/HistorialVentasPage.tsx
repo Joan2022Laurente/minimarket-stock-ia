@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Search, Eye, Printer, X, Receipt } from 'lucide-react';
 import { ventaService } from '../../services/api';
 import { VentaListItem, VentaTicketDetail } from '../../types/venta';
@@ -43,7 +43,7 @@ export const HistorialVentasPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Cabecera FinPoint Card */}
-      <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-7 shadow-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-7 shadow-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
             <Receipt className="w-5 h-5 text-[#FF4A15]" />
@@ -65,7 +65,7 @@ export const HistorialVentasPage: React.FC = () => {
       </div>
 
       {/* Tabla de Ventas en Tarjeta FinPoint */}
-      <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card">
+      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card">
         {loading ? (
           <div className="p-12 text-center text-[#8E8E93] text-sm">Cargando transacciones...</div>
         ) : filteredVentas.length === 0 ? (
@@ -138,7 +138,7 @@ export const HistorialVentasPage: React.FC = () => {
       {/* Modal Detalle Ticket */}
       {selectedTicket && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="bg-[#141416] rounded-[28px] border border-white/[0.1] max-w-md w-full p-7 shadow-2xl animate-pop text-white">
+          <div className="bg-[#141416] rounded-card border border-white/[0.1] max-w-md w-full p-7 shadow-2xl animate-pop text-white">
             <div className="flex justify-between items-center pb-3 border-b border-white/[0.08] mb-4">
               <h3 className="font-extrabold text-base text-white">Comprobante de Venta</h3>
               <button
@@ -149,7 +149,7 @@ export const HistorialVentasPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="bg-white text-slate-900 rounded-[20px] p-5 font-mono text-xs space-y-2 shadow-inner">
+            <div className="bg-white text-slate-900 rounded-tile p-5 font-mono text-xs space-y-2 shadow-inner">
               <div className="text-center border-b border-slate-300 pb-2">
                 <h4 className="font-extrabold text-sm text-slate-900">MINIMARKET EL BUEN VECINO</h4>
                 <p className="text-[10px] text-slate-500">RUC: 20123456789</p>
