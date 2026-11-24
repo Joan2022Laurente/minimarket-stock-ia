@@ -229,48 +229,61 @@ export const PrediccionesPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {filteredAlertas.map((a) => {
-                  const coberturaColor =
-                    a.dias_cobertura <= 3
-                      ? 'text-[#FF4D6A] font-bold'
-                      : a.dias_cobertura <= 7
-                      ? 'text-[#FFD21F] font-bold'
-                      : 'text-[#34D399] font-bold';
+                {filteredAlertas.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-[#8E8E93] text-xs">
+                      No hay productos en esta categoría de alerta.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredAlertas.map((a) => {
+                    const dias = Number(a.dias_cobertura ?? 0);
+                    const demanda7dias = Number(a.demanda_diaria_estimada ?? 0) * 7;
+                    const stock = Number(a.stock_actual ?? 0);
+                    const cantSugerida = Number(a.cantidad_sugerida ?? 0);
 
-                  const motivo =
-                    a.nivel_alerta === 'critico'
-                      ? 'Riesgo inminente de quiebre'
-                      : a.nivel_alerta === 'advertencia'
-                      ? 'Reponer según punto de reorden'
-                      : 'Stock óptimo proyectado';
+                    const coberturaColor =
+                      dias <= 3
+                        ? 'text-[#FF4D6A] font-bold'
+                        : dias <= 7
+                        ? 'text-[#FFD21F] font-bold'
+                        : 'text-[#34D399] font-bold';
 
-                  return (
-                    <tr key={a.producto_id} className="hover:bg-white/[0.02] transition-colors h-14">
-                      <td className="py-3 px-4 font-bold text-white">{a.producto_nombre}</td>
-                      <td className="py-3 px-4">
-                        <StockBadge stock={a.stock_actual} />
-                      </td>
-                      <td className="py-3 px-4 font-mono text-white">
-                        {(a.demanda_diaria_estimada * 7).toFixed(1)} u
-                      </td>
-                      <td className={`py-3 px-4 font-mono ${coberturaColor}`}>
-                        {a.dias_cobertura.toFixed(1)} días
-                      </td>
-                      <td className="py-3 px-4">
-                        {a.cantidad_sugerida > 0 ? (
-                          <span className="px-3 py-1 rounded-full bg-[#FF4A15]/20 text-[#FF4A15] font-mono font-bold text-xs">
-                            +{a.cantidad_sugerida} u
-                          </span>
-                        ) : (
-                          <span className="px-3 py-1 rounded-full bg-[#1C1C1F] text-[#8E8E93] font-mono text-xs">
-                            0 u
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-[#8E8E93] max-w-xs truncate">{motivo}</td>
-                    </tr>
-                  );
-                })}
+                    const motivo =
+                      a.nivel_alerta === 'critico'
+                        ? 'Riesgo inminente de quiebre'
+                        : a.nivel_alerta === 'advertencia'
+                        ? 'Reponer según punto de reorden'
+                        : 'Stock óptimo proyectado';
+
+                    return (
+                      <tr key={a.producto_id} className="hover:bg-white/[0.02] transition-colors h-14">
+                        <td className="py-3 px-4 font-bold text-white">{a.producto_nombre}</td>
+                        <td className="py-3 px-4">
+                          <StockBadge stock={stock} />
+                        </td>
+                        <td className="py-3 px-4 font-mono text-white">
+                          {demanda7dias.toFixed(1)} u
+                        </td>
+                        <td className={`py-3 px-4 font-mono ${coberturaColor}`}>
+                          {dias.toFixed(1)} días
+                        </td>
+                        <td className="py-3 px-4">
+                          {cantSugerida > 0 ? (
+                            <span className="px-3 py-1 rounded-full bg-[#FF4A15]/20 text-[#FF4A15] font-mono font-bold text-xs">
+                              +{cantSugerida} u
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 rounded-full bg-[#1C1C1F] text-[#8E8E93] font-mono text-xs">
+                              0 u
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-[#8E8E93] max-w-xs truncate">{motivo}</td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
