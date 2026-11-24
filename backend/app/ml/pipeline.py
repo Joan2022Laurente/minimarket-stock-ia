@@ -106,10 +106,11 @@ def run_ml_pipeline() -> Dict[str, Any]:
 
         alertas_generadas.append(inv_metrics)
 
-    # 5. Persistir en tabla 'predicciones' en Supabase
-    if conn and alertas_generadas:
+    # 5. Persistir en tabla 'predicciones' en Supabase o en memoria
+    save_conn = db_manager.get_connection()
+    if save_conn and alertas_generadas:
         try:
-            with conn.cursor() as cur:
+            with save_conn.cursor() as cur:
                 # Limpiar predicciones del día previo para mantener catálogo actualizado
                 cur.execute("DELETE FROM public.predicciones WHERE fecha_prediccion = CURRENT_DATE;")
                 for a in alertas_generadas:
@@ -127,13 +128,15 @@ def run_ml_pipeline() -> Dict[str, Any]:
                         a["nivel_alerta"],
                         a["resumen_ejecutivo"]
                     ))
-                conn.commit()
+                save_conn.commit()
         except Exception as e:
             logger.error(f"Error al guardar predicciones en Supabase: {e}")
-            if conn:
-                conn.rollback()
+            if save_conn:
+                save_conn.rollback()
         finally:
-            conn.close()
+            save_conn.close()
+    else:
+        db_manager._in_memory_data["predicciones"] = alertas_generadas
 
     # 6. Respaldo opcional del modelo en S3
     s3_uploaded = s3_service.upload_model_artifact(demand_predictor.model_path)
