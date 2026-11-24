@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Store, Lock, Mail, ArrowRight, ShieldCheck, UserCheck } from 'lucide-react';
+import { Layers, Lock, Mail, ArrowRight, ShieldCheck, UserCheck } from 'lucide-react';
 import { authService } from '../../services/api';
 import { useAuthStore } from '../../stores/useAuthStore';
 
@@ -41,102 +41,112 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
-      <div className="card max-w-[420px] w-full p-8 shadow-card border border-line">
-        {/* Header con isotipo hero */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-brand-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-hero text-white">
-            <Store className="w-8 h-8" />
+    <div className="min-h-screen bg-[#0A0A0C] flex items-center justify-center p-4 selection:bg-[#FF4A15] selection:text-white">
+      <div className="bg-[#141416] rounded-[32px] border border-white/[0.08] max-w-[440px] w-full p-8 sm:p-10 shadow-2xl relative overflow-hidden">
+        {/* Glow sutil de fondo */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-[#FF4A15]/10 blur-3xl pointer-events-none"></div>
+
+        {/* Header con Isotipo FinPoint */}
+        <div className="text-center mb-8 relative">
+          <div className="w-14 h-14 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20 text-black">
+            <Layers className="w-7 h-7" />
           </div>
-          <h2 className="font-display text-2xl font-bold text-ink tracking-tight">
-            El Buen Vecino
+          <h2 className="text-2xl font-extrabold text-white tracking-tight font-sans">
+            BuenVecino POS
           </h2>
-          <p className="text-xs text-ink-muted mt-1">Punto de venta y gestión predictiva de inventarios</p>
+          <p className="text-xs text-[#8E8E93] mt-1 font-medium">
+            Terminal predictiva con arquitectura FinPoint
+          </p>
         </div>
 
         {error && (
-          <div className="mb-6 p-3 bg-danger-soft border border-danger/30 rounded-chip text-danger text-xs text-center font-medium">
+          <div className="mb-6 p-3 bg-[#FF4D6A]/15 border border-[#FF4D6A]/30 rounded-2xl text-[#FF4D6A] text-xs text-center font-bold">
             {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="label mb-1.5">
+            <label className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider mb-1.5 block">
               Correo Electrónico
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-ink-faint absolute left-3.5 top-4" />
+              <Mail className="w-4 h-4 text-[#8E8E93] absolute left-4 top-4 pointer-events-none" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ejemplo@elbuenvecino.com"
-                className="w-full pl-10"
+                className="w-full h-12 pl-11 pr-4 bg-[#1C1C1F] border border-white/[0.08] rounded-full text-xs text-white placeholder-[#5C5C62] focus:outline-none focus:border-white/30"
               />
             </div>
           </div>
 
           <div>
-            <label className="label mb-1.5">
+            <label className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider mb-1.5 block">
               Contraseña
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-ink-faint absolute left-3.5 top-4" />
+              <Lock className="w-4 h-4 text-[#8E8E93] absolute left-4 top-4 pointer-events-none" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10"
+                className="w-full h-12 pl-11 pr-4 bg-[#1C1C1F] border border-white/[0.08] rounded-full text-xs text-white placeholder-[#5C5C62] focus:outline-none focus:border-white/30"
               />
             </div>
           </div>
 
+          {/* Gran Botón Blanco Estilo FinPoint */}
           <button
             type="submit"
             disabled={loading}
-            className="btn-primary w-full h-14 mt-3 shadow-hero text-base"
+            className="w-full h-14 bg-white hover:bg-neutral-100 text-black font-extrabold text-sm rounded-full transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer mt-2 disabled:opacity-50"
           >
             <span>{loading ? 'Ingresando...' : 'Iniciar Sesión'}</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 stroke-[3]" />
           </button>
         </form>
 
-        {/* Acceso Rápido Demo / Pruebas */}
-        <div className="mt-8 pt-6 border-t border-line-soft">
-          <p className="text-[11px] text-ink-muted font-medium mb-3 text-center">
-            Perfiles de demostración preconfigurados:
+        {/* Acceso Rápido Demo en Cápsulas */}
+        <div className="mt-8 pt-6 border-t border-white/[0.06]">
+          <p className="text-[11px] text-[#8E8E93] font-semibold mb-3 text-center">
+            Perfiles de demostración rápida:
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
               onClick={() => handleQuickLogin('admin@elbuenvecino.com', 'admin123')}
-              className={`p-3 tile text-left transition-all group ${
-                email === 'admin@elbuenvecino.com' ? 'border-brand-500 bg-surface-3 shadow-focus' : 'hover:bg-surface-3'
+              className={`p-3 rounded-[20px] text-left transition-all bg-[#1C1C1F] border ${
+                email === 'admin@elbuenvecino.com'
+                  ? 'border-[#FF4A15] shadow-[0_0_15px_rgba(255,74,21,0.25)]'
+                  : 'border-white/[0.06] hover:border-white/20'
               }`}
             >
-              <div className="flex items-center gap-1.5 text-brand-500 text-xs font-semibold">
+              <div className="flex items-center gap-1.5 text-[#FF4A15] text-xs font-bold">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Admin</span>
               </div>
-              <p className="text-[10px] text-ink-muted truncate mt-1">Control total</p>
+              <p className="text-[10px] text-[#8E8E93] truncate mt-0.5">Control Total</p>
             </button>
 
             <button
               type="button"
               onClick={() => handleQuickLogin('cajero@elbuenvecino.com', 'cajero123')}
-              className={`p-3 tile text-left transition-all group ${
-                email === 'cajero@elbuenvecino.com' ? 'border-brand-500 bg-surface-3 shadow-focus' : 'hover:bg-surface-3'
+              className={`p-3 rounded-[20px] text-left transition-all bg-[#1C1C1F] border ${
+                email === 'cajero@elbuenvecino.com'
+                  ? 'border-[#34D399] shadow-[0_0_15px_rgba(52,211,153,0.25)]'
+                  : 'border-white/[0.06] hover:border-white/20'
               }`}
             >
-              <div className="flex items-center gap-1.5 text-success text-xs font-semibold">
+              <div className="flex items-center gap-1.5 text-[#34D399] text-xs font-bold">
                 <UserCheck className="w-3.5 h-3.5" />
                 <span>Cajero</span>
               </div>
-              <p className="text-[10px] text-ink-muted truncate mt-1">Caja POS</p>
+              <p className="text-[10px] text-[#8E8E93] truncate mt-0.5">Caja POS</p>
             </button>
           </div>
         </div>

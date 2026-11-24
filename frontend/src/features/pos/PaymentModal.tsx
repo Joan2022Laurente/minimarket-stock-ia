@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, DollarSign, Smartphone, CreditCard, X, Printer } from 'lucide-react';
+import { DollarSign, Smartphone, CreditCard, X, Printer, CheckCircle2 } from 'lucide-react';
 import { ventaService } from '../../services/api';
 import { useCartStore } from '../../stores/useCartStore';
 import { VentaResponse } from '../../types/venta';
@@ -69,46 +69,46 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
   const quickBills = [10, 20, 50, 100, 200];
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <div className="glass card max-w-lg w-full p-6 shadow-pop animate-pop border border-line">
-        {/* Cabecera del Modal */}
-        <div className="flex justify-between items-center border-b border-line pb-4 mb-5">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+      <div className="bg-[#141416] rounded-[28px] border border-white/[0.1] max-w-lg w-full p-7 shadow-2xl animate-pop text-white">
+        {/* Cabecera */}
+        <div className="flex justify-between items-center pb-4 border-b border-white/[0.08] mb-5">
           <div>
-            <h3 className="font-display text-lg font-bold text-ink">
+            <h3 className="font-extrabold text-lg tracking-tight text-white">
               {ticketVenta ? 'Venta Completada' : 'Finalizar Venta'}
             </h3>
-            <p className="text-xs text-ink-muted">
+            <p className="text-xs text-[#8E8E93] mt-0.5">
               {ticketVenta ? 'Comprobante emitido exitosamente' : 'Seleccione el método de pago y registre el cobro'}
             </p>
           </div>
           <button
             onClick={handleCerrarTodo}
-            className="p-1.5 rounded-full text-ink-muted hover:text-ink hover:bg-surface-3 transition"
+            className="w-9 h-9 rounded-full bg-[#1C1C1F] border border-white/[0.08] flex items-center justify-center text-[#8E8E93] hover:text-white transition"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-danger-soft border border-danger/30 rounded-chip text-danger text-xs font-medium">
+          <div className="mb-4 p-3 bg-[#FF4D6A]/15 border border-[#FF4D6A]/30 rounded-xl text-[#FF4D6A] text-xs font-semibold">
             {error}
           </div>
         )}
 
         {!ticketVenta ? (
           <div className="space-y-5">
-            {/* Selector de Método de Pago en Píldoras */}
-            <div className="grid grid-cols-3 gap-2">
+            {/* 3 Métodos de pago en píldoras FinPoint */}
+            <div className="grid grid-cols-3 gap-2.5">
               <button
                 type="button"
                 onClick={() => {
                   setMetodo('efectivo');
                   setMontoPagado(total);
                 }}
-                className={`h-14 rounded-tile font-semibold text-xs flex flex-col items-center justify-center gap-1 transition ${
+                className={`h-14 rounded-[20px] font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition-all ${
                   metodo === 'efectivo'
-                    ? 'bg-ink text-canvas shadow-sm'
-                    : 'bg-surface-2 text-ink-muted border border-line hover:text-ink hover:bg-surface-3'
+                    ? 'bg-white text-black shadow-lg scale-100'
+                    : 'bg-[#1C1C1F] text-[#8E8E93] border border-white/[0.06] hover:text-white'
                 }`}
               >
                 <DollarSign className="w-4 h-4" />
@@ -118,10 +118,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
               <button
                 type="button"
                 onClick={() => setMetodo('yape_plin')}
-                className={`h-14 rounded-tile font-semibold text-xs flex flex-col items-center justify-center gap-1 transition ${
+                className={`h-14 rounded-[20px] font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition-all ${
                   metodo === 'yape_plin'
-                    ? 'bg-ink text-canvas shadow-sm'
-                    : 'bg-surface-2 text-ink-muted border border-line hover:text-ink hover:bg-surface-3'
+                    ? 'bg-white text-black shadow-lg scale-100'
+                    : 'bg-[#1C1C1F] text-[#8E8E93] border border-white/[0.06] hover:text-white'
                 }`}
               >
                 <Smartphone className="w-4 h-4" />
@@ -131,10 +131,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
               <button
                 type="button"
                 onClick={() => setMetodo('tarjeta')}
-                className={`h-14 rounded-tile font-semibold text-xs flex flex-col items-center justify-center gap-1 transition ${
+                className={`h-14 rounded-[20px] font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition-all ${
                   metodo === 'tarjeta'
-                    ? 'bg-ink text-canvas shadow-sm'
-                    : 'bg-surface-2 text-ink-muted border border-line hover:text-ink hover:bg-surface-3'
+                    ? 'bg-white text-black shadow-lg scale-100'
+                    : 'bg-[#1C1C1F] text-[#8E8E93] border border-white/[0.06] hover:text-white'
                 }`}
               >
                 <CreditCard className="w-4 h-4" />
@@ -142,37 +142,41 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
               </button>
             </div>
 
-            {/* Total a pagar */}
-            <div className="card bg-surface-2 border-line text-center py-4">
-              <span className="label text-ink-muted">Total a Pagar</span>
-              <div className="font-display text-total font-bold text-ink tabular-nums mt-1">
+            {/* Total Grande */}
+            <div className="bg-[#1C1C1F] rounded-[22px] border border-white/[0.06] text-center py-5">
+              <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider">
+                Total a Pagar
+              </span>
+              <div className="text-4xl font-extrabold text-white font-sans mt-1">
                 S/ {total.toFixed(2)}
               </div>
             </div>
 
-            {/* Opciones Específicas para Efectivo */}
+            {/* Efectivo Inputs */}
             {metodo === 'efectivo' && (
               <div className="space-y-3">
                 <div>
-                  <label className="label mb-1.5">Monto Recibido en Efectivo (S/)</label>
+                  <label className="text-xs font-semibold text-[#8E8E93] mb-1.5 block">
+                    Monto Recibido (S/)
+                  </label>
                   <input
                     type="number"
                     step="0.10"
                     min="0"
                     value={montoPagado || ''}
                     onChange={(e) => setMontoPagado(Number(e.target.value))}
-                    className="w-full font-display text-kpi text-center tabular-nums"
+                    className="w-full h-12 bg-[#1C1C1F] border border-white/[0.1] rounded-full text-center text-xl font-extrabold font-mono text-white focus:outline-none focus:border-[#FF4A15]"
                   />
                 </div>
 
-                {/* Chips de Billetes Rápidos */}
+                {/* Billetes rápidos */}
                 <div className="flex gap-1.5 justify-center flex-wrap">
                   {quickBills.map((b) => (
                     <button
                       key={b}
                       type="button"
                       onClick={() => setMontoPagado(b)}
-                      className="btn-ghost h-10 px-3.5 text-xs font-mono font-semibold"
+                      className="px-3.5 py-1.5 rounded-full bg-[#1C1C1F] border border-white/[0.08] text-xs font-mono font-bold text-white hover:border-white/30"
                     >
                       S/ {b}
                     </button>
@@ -180,20 +184,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                   <button
                     type="button"
                     onClick={() => setMontoPagado(total)}
-                    className="btn-ghost h-10 px-3.5 text-xs font-semibold text-brand-500 border-brand-500/30"
+                    className="px-3.5 py-1.5 rounded-full bg-[#FF4A15]/20 border border-[#FF4A15]/40 text-xs font-bold text-[#FF4A15]"
                   >
                     Exacto
                   </button>
                 </div>
 
-                {/* Vuelto / Saldo */}
-                <div className="flex justify-between items-center p-3 rounded-tile bg-surface-2 border border-line">
-                  <span className="text-xs text-ink-muted font-medium">
+                {/* Vuelto */}
+                <div className="flex justify-between items-center p-3.5 rounded-[18px] bg-[#1C1C1F] border border-white/[0.06]">
+                  <span className="text-xs text-[#8E8E93] font-semibold">
                     {saldoInsuficiente ? 'Faltante:' : 'Vuelto a Entregar:'}
                   </span>
                   <span
-                    className={`pill text-sm font-bold h-8 px-4 ${
-                      saldoInsuficiente ? 'bg-danger-soft text-danger' : 'bg-success text-on-light'
+                    className={`px-3 py-1 rounded-full text-sm font-extrabold font-mono ${
+                      saldoInsuficiente
+                        ? 'bg-[#FF4D6A]/20 text-[#FF4D6A]'
+                        : 'bg-[#34D399] text-black'
                     }`}
                   >
                     S/ {saldoInsuficiente ? (total - montoPagado).toFixed(2) : vuelto.toFixed(2)}
@@ -204,34 +210,35 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
 
             {/* Acciones */}
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={onClose} className="btn-ghost flex-1 h-14">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 h-12 rounded-full bg-[#1C1C1F] border border-white/[0.08] text-xs font-bold text-[#8E8E93] hover:text-white"
+              >
                 Cancelar
               </button>
               <button
                 type="button"
                 disabled={loading || saldoInsuficiente}
                 onClick={handleCobrar}
-                className="btn-primary flex-2 h-14 shadow-hero text-base font-bold disabled:opacity-40"
+                className="flex-2 h-12 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold shadow-lg shadow-[#FF4A15]/30 disabled:opacity-40"
               >
-                {loading ? 'Procesando Venta...' : 'Confirmar Cobro (Enter)'}
+                {loading ? 'Procesando Venta...' : 'Confirmar Cobro'}
               </button>
             </div>
           </div>
         ) : (
-          /* Vista del Ticket Emitido sobre Papel Blanco Fijo */
-          <div className="space-y-5 animate-pop">
-            <div className="flex items-center gap-2 text-success font-semibold text-sm">
-              <CheckCircle2 className="w-5 h-5" />
-              <span>Transacción registrada en Supabase</span>
+          /* Ticket Emitido en Papel Blanco */
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-[#34D399] font-bold text-xs">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Transacción Atómica Registrada</span>
             </div>
 
-            {/* Ticket de Papel Térmico Blanco */}
-            <div className="bg-white text-slate-900 rounded-tile p-5 shadow-inner font-mono text-xs space-y-2 border border-slate-200">
+            <div className="bg-white text-slate-900 rounded-[20px] p-5 font-mono text-xs space-y-2 shadow-inner">
               <div className="text-center border-b border-slate-300 pb-2">
-                <h4 className="font-bold text-sm tracking-tight">MINIMARKET EL BUEN VECINO</h4>
-                <p className="text-[10px] text-slate-500">RUC: 20123456789</p>
-                <p className="text-[10px] text-slate-500">BOLETA DE VENTA ELECTRÓNICA</p>
-                <p className="font-bold text-xs mt-1 text-slate-800">{ticketVenta.numero_ticket}</p>
+                <h4 className="font-extrabold text-sm text-slate-900">MINIMARKET EL BUEN VECINO</h4>
+                <p className="text-[10px] text-slate-500">BOLETA ELECTRÓNICA: {ticketVenta.numero_ticket}</p>
               </div>
 
               <div className="space-y-1 py-2 border-b border-slate-300 text-[11px]">
@@ -240,40 +247,30 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                     <span className="truncate max-w-[180px]">
                       {it.cantidad}x {it.nombre}
                     </span>
-                    <span className="font-bold tabular-nums">S/ {it.subtotal.toFixed(2)}</span>
+                    <span className="font-bold">S/ {it.subtotal.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="space-y-0.5 pt-1 text-[11px]">
-                <div className="flex justify-between">
-                  <span>Subtotal:</span>
-                  <span>S/ {ticketVenta.subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>IGV (18%):</span>
-                  <span>S/ {ticketVenta.igv.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between font-bold text-sm border-t border-slate-400 pt-1">
-                  <span>TOTAL:</span>
-                  <span>S/ {ticketVenta.total.toFixed(2)}</span>
-                </div>
+              <div className="pt-1 flex justify-between font-bold text-sm">
+                <span>TOTAL:</span>
+                <span>S/ {ticketVenta.total.toFixed(2)}</span>
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="btn-ghost flex-1 h-12 flex items-center justify-center gap-2"
+                className="flex-1 h-12 rounded-full bg-[#1C1C1F] border border-white/[0.08] text-xs font-bold text-white flex items-center justify-center gap-2"
               >
                 <Printer className="w-4 h-4" />
-                <span>Imprimir Ticket</span>
+                <span>Imprimir</span>
               </button>
               <button
                 type="button"
                 onClick={handleCerrarTodo}
-                className="btn-primary flex-1 h-12 shadow-hero font-bold"
+                className="flex-1 h-12 rounded-full bg-white text-black text-xs font-extrabold shadow-lg"
               >
                 Nueva Venta
               </button>

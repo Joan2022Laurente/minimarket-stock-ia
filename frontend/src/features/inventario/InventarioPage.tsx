@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Search, History, PlusCircle } from 'lucide-react';
+import {
+  Search,
+  PlusCircle,
+} from 'lucide-react';
 import { inventarioService } from '../../services/api';
 import { StockAjusteModal } from './StockAjusteModal';
 import { StockBadge } from '../../components/ui/StockBadge';
@@ -47,149 +50,165 @@ export const InventarioPage: React.FC = () => {
   const countCriticos = items.filter((i) => i.estado_stock === 'critico').length;
   const countBajos = items.filter((i) => i.estado_stock === 'bajo').length;
   const countOptimos = items.filter((i) => i.estado_stock === 'optimo').length;
+  const totalItems = items.length || 1;
 
   return (
     <div className="space-y-6">
-      {/* 3 Tarjetas KPI Superiores (Estilo FinPoint) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* 3 Tarjetas KPI Superiores de Inventario Real con Estética FinPoint */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {/* Crítico */}
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <span className="label label-dot text-danger">Stock Crítico</span>
-            <span className="pill bg-danger-soft text-danger">Quiebre inminente</span>
+        <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3">
+            <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
+              Stock Crítico
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#FF4D6A]/20 text-[#FF4D6A] text-[11px] font-bold">
+              Quiebre inminente
+            </span>
           </div>
-          <div className="mt-3 flex items-end gap-3">
-            <span className="kpi text-danger">{countCriticos}</span>
-            <span className="text-xs text-ink-muted mb-1.5">SKUs agotados o casi agotados</span>
+          <div className="py-2">
+            <div className="text-4xl font-extrabold text-[#FF4D6A] font-sans">
+              {countCriticos}
+            </div>
+            <p className="text-xs text-[#8E8E93] mt-1">SKUs con menos de 2 días de stock</p>
           </div>
           <div className="mt-3">
-            <StatBar current={countCriticos} max={items.length || 1} color="danger" />
+            <StatBar current={countCriticos} max={totalItems} color="danger" />
           </div>
         </div>
 
         {/* Bajo */}
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <span className="label label-dot text-warning">Stock Bajo</span>
-            <span className="pill bg-warning-soft text-warning">Por reponer</span>
+        <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3">
+            <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
+              Stock Bajo
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#FFD21F]/20 text-[#FFD21F] text-[11px] font-bold">
+              Por reponer
+            </span>
           </div>
-          <div className="mt-3 flex items-end gap-3">
-            <span className="kpi text-warning">{countBajos}</span>
-            <span className="text-xs text-ink-muted mb-1.5">SKUs bajo el mínimo</span>
+          <div className="py-2">
+            <div className="text-4xl font-extrabold text-[#FFD21F] font-sans">
+              {countBajos}
+            </div>
+            <p className="text-xs text-[#8E8E93] mt-1">SKUs por debajo del mínimo</p>
           </div>
           <div className="mt-3">
-            <StatBar current={countBajos} max={items.length || 1} color="warning" />
+            <StatBar current={countBajos} max={totalItems} color="warning" />
           </div>
         </div>
 
         {/* Óptimo */}
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <span className="label label-dot text-success">Stock Saludable</span>
-            <span className="pill bg-success-soft text-success">Óptimo</span>
+        <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3">
+            <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
+              Stock Saludable
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#34D399]/20 text-[#34D399] text-[11px] font-bold">
+              Óptimo
+            </span>
           </div>
-          <div className="mt-3 flex items-end gap-3">
-            <span className="kpi text-success">{countOptimos}</span>
-            <span className="text-xs text-ink-muted mb-1.5">SKUs en nivel normal</span>
+          <div className="py-2">
+            <div className="text-4xl font-extrabold text-[#34D399] font-sans">
+              {countOptimos}
+            </div>
+            <p className="text-xs text-[#8E8E93] mt-1">SKUs con cobertura adecuada</p>
           </div>
           <div className="mt-3">
-            <StatBar current={countOptimos} max={items.length || 1} color="success" />
+            <StatBar current={countOptimos} max={totalItems} color="success" />
           </div>
         </div>
       </div>
 
-      {/* Barra de Filtros y Selector de Pestaña */}
-      <div className="card p-4 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
-        {/* Selector de Pestaña (Stock vs Kardex) */}
-        <div className="flex gap-1 rounded-full border border-line bg-surface-2 p-1 self-start">
-          <button
-            onClick={() => setActiveTab('stock')}
-            className={`rounded-full px-5 h-9 inline-flex items-center gap-2 text-xs font-semibold transition ${
-              activeTab === 'stock'
-                ? 'bg-ink text-canvas shadow-sm'
-                : 'text-ink-muted hover:text-ink'
-            }`}
-          >
-            <Package className="w-4 h-4" />
-            <span>Niveles de Stock ({items.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('kardex')}
-            className={`rounded-full px-5 h-9 inline-flex items-center gap-2 text-xs font-semibold transition ${
-              activeTab === 'kardex'
-                ? 'bg-ink text-canvas shadow-sm'
-                : 'text-ink-muted hover:text-ink'
-            }`}
-          >
-            <History className="w-4 h-4" />
-            <span>Kardex / Movimientos ({kardex.length})</span>
-          </button>
-        </div>
-
-        {/* Búsqueda y Filtros de Estado */}
-        {activeTab === 'stock' && (
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative min-w-[220px]">
-              <Search className="w-4 h-4 text-ink-faint absolute left-3 top-3.5" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por SKU o nombre..."
-                className="w-full h-10 pl-9 text-xs"
-              />
-            </div>
-
-            <div className="flex items-center gap-1 rounded-full border border-line bg-surface-2 p-1">
-              {[
-                { id: 'todos', label: 'Todos' },
-                { id: 'critico', label: 'Crítico' },
-                { id: 'bajo', label: 'Bajo' },
-                { id: 'optimo', label: 'Óptimo' },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setFilterEstado(f.id)}
-                  className={`rounded-full px-3 h-7 text-xs font-semibold transition ${
-                    filterEstado === f.id
-                      ? 'bg-ink text-canvas'
-                      : 'text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
+      {/* Contenedor Principal: Filtros y Tabla */}
+      <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card space-y-5">
+        {/* Pestañas y Filtros */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-white/[0.06]">
+          {/* Pestañas en Píldora */}
+          <div className="flex items-center gap-1 bg-[#0A0A0C] p-1.5 rounded-full border border-white/[0.08]">
+            <button
+              onClick={() => setActiveTab('stock')}
+              className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
+                activeTab === 'stock'
+                  ? 'bg-white text-black shadow-md'
+                  : 'text-[#8E8E93] hover:text-white'
+              }`}
+            >
+              Niveles de Stock ({items.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('kardex')}
+              className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
+                activeTab === 'kardex'
+                  ? 'bg-white text-black shadow-md'
+                  : 'text-[#8E8E93] hover:text-white'
+              }`}
+            >
+              Kardex / Movimientos ({kardex.length})
+            </button>
           </div>
-        )}
-      </div>
 
-      {/* Contenido Principal: Tabla de Stock o Kardex */}
-      {loading ? (
-        <div className="card p-12 text-center text-ink-muted text-sm">
-          Cargando datos de inventario...
+          {/* Buscador y Filtro por Estado */}
+          {activeTab === 'stock' && (
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="w-4 h-4 text-[#8E8E93] absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por SKU o nombre..."
+                  className="w-full h-10 pl-10 pr-4 bg-[#1C1C1F] border border-white/[0.08] rounded-full text-xs text-white placeholder-[#5C5C62] focus:outline-none focus:border-white/20"
+                />
+              </div>
+
+              <div className="flex items-center gap-1 bg-[#1C1C1F] p-1 rounded-full border border-white/[0.06]">
+                {[
+                  { id: 'todos', label: 'Todos' },
+                  { id: 'critico', label: 'Crítico' },
+                  { id: 'bajo', label: 'Bajo' },
+                  { id: 'optimo', label: 'Óptimo' },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setFilterEstado(f.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                      filterEstado === f.id
+                        ? 'bg-white text-black shadow-sm'
+                        : 'text-[#8E8E93] hover:text-white'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      ) : activeTab === 'stock' ? (
-        <div className="card p-0 overflow-hidden">
+
+        {/* Tabla de Productos o Kardex */}
+        {loading ? (
+          <div className="p-12 text-center text-[#8E8E93] text-sm">Cargando inventario...</div>
+        ) : activeTab === 'stock' ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-surface-2 border-b border-line text-ink-muted font-medium">
+              <thead className="border-b border-white/[0.06] text-[#8E8E93] font-semibold uppercase tracking-wider">
                 <tr>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Código / SKU</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Producto</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Categoría</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Capacidad / Nivel</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Stock</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-right">Acción</th>
+                  <th className="py-3 px-4">SKU / Código</th>
+                  <th className="py-3 px-4">Producto</th>
+                  <th className="py-3 px-4">Categoría</th>
+                  <th className="py-3 px-4">Capacidad de Almacén</th>
+                  <th className="py-3 px-4">Stock</th>
+                  <th className="py-3 px-4 text-right">Acción</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line-soft">
+              <tbody className="divide-y divide-white/[0.04]">
                 {filteredItems.map((prod) => (
-                  <tr key={prod.id} className="hover:bg-surface-2/60 transition h-14">
-                    <td className="py-3 px-4 font-mono text-ink-muted">{prod.codigo_barras}</td>
-                    <td className="py-3 px-4 font-semibold text-ink">{prod.nombre}</td>
-                    <td className="py-3 px-4 text-ink-muted">{prod.categoria}</td>
-                    <td className="py-3 px-4 w-44">
+                  <tr key={prod.id} className="hover:bg-white/[0.02] transition-colors h-14">
+                    <td className="py-3 px-4 font-mono text-[#8E8E93]">{prod.codigo_barras}</td>
+                    <td className="py-3 px-4 font-bold text-white">{prod.nombre}</td>
+                    <td className="py-3 px-4 text-[#8E8E93]">{prod.categoria}</td>
+                    <td className="py-3 px-4 w-48">
                       <div className="flex items-center gap-2">
                         <div className="flex-1">
                           <StatBar
@@ -204,7 +223,7 @@ export const InventarioPage: React.FC = () => {
                             }
                           />
                         </div>
-                        <span className="text-[10px] text-ink-faint font-mono w-10 text-right">
+                        <span className="text-[10px] text-[#5C5C62] font-mono w-10 text-right">
                           {Math.round((prod.stock_actual / (prod.stock_maximo || 50)) * 100)}%
                         </span>
                       </div>
@@ -218,9 +237,9 @@ export const InventarioPage: React.FC = () => {
                           setSelectedProd(prod);
                           setIsModalOpen(true);
                         }}
-                        className="btn-ghost h-8 px-3 text-xs font-semibold gap-1 inline-flex items-center"
+                        className="px-3 py-1.5 rounded-full bg-[#1C1C1F] border border-white/[0.08] hover:border-white/30 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-colors"
                       >
-                        <PlusCircle className="w-3.5 h-3.5 text-brand-500" />
+                        <PlusCircle className="w-3.5 h-3.5 text-[#FF4A15]" />
                         <span>Ajustar</span>
                       </button>
                     </td>
@@ -229,28 +248,25 @@ export const InventarioPage: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
-      ) : (
-        /* Vista de Kardex */
-        <div className="card p-0 overflow-hidden">
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-surface-2 border-b border-line text-ink-muted font-medium">
+              <thead className="border-b border-white/[0.06] text-[#8E8E93] font-semibold uppercase tracking-wider">
                 <tr>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Fecha / Hora</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Producto</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Tipo Movimiento</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Cantidad</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Stock Resultante</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Motivo</th>
+                  <th className="py-3 px-4">Fecha</th>
+                  <th className="py-3 px-4">Producto</th>
+                  <th className="py-3 px-4">Tipo Movimiento</th>
+                  <th className="py-3 px-4">Cantidad</th>
+                  <th className="py-3 px-4">Stock Resultante</th>
+                  <th className="py-3 px-4">Motivo</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line-soft">
+              <tbody className="divide-y divide-white/[0.04]">
                 {kardex.map((k) => {
                   const isPositive = k.cantidad > 0;
                   return (
-                    <tr key={k.id} className="hover:bg-surface-2/60 transition h-14">
-                      <td className="py-3 px-4 font-mono text-ink-muted">
+                    <tr key={k.id} className="hover:bg-white/[0.02] transition-colors h-14">
+                      <td className="py-3 px-4 font-mono text-[#8E8E93]">
                         {new Date(k.created_at).toLocaleString('es-PE', {
                           day: '2-digit',
                           month: '2-digit',
@@ -258,29 +274,29 @@ export const InventarioPage: React.FC = () => {
                           minute: '2-digit',
                         })}
                       </td>
-                      <td className="py-3 px-4 font-semibold text-ink">{k.producto_nombre}</td>
+                      <td className="py-3 px-4 font-bold text-white">{k.producto_nombre}</td>
                       <td className="py-3 px-4">
-                        <span className="pill bg-surface-3 text-ink-muted text-[11px]">
+                        <span className="px-2.5 py-1 rounded-full bg-[#1C1C1F] text-[#8E8E93] text-[10px] font-mono">
                           {k.tipo}
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-mono font-bold text-sm tabular-nums">
-                        <span className={isPositive ? 'text-success' : 'text-danger'}>
+                      <td className="py-3 px-4 font-mono font-bold text-sm">
+                        <span className={isPositive ? 'text-[#34D399]' : 'text-[#FF4D6A]'}>
                           {isPositive ? `+${k.cantidad}` : k.cantidad}
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-mono tabular-nums text-ink">{k.stock_posterior} u</td>
-                      <td className="py-3 px-4 text-ink-muted">{k.motivo}</td>
+                      <td className="py-3 px-4 font-mono text-white">{k.stock_posterior} u</td>
+                      <td className="py-3 px-4 text-[#8E8E93]">{k.motivo}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Modal de Ajuste de Stock */}
+      {/* Modal Ajuste Stock */}
       <StockAjusteModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

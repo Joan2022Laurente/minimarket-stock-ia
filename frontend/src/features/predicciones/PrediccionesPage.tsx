@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, RefreshCw, Cpu, BrainCircuit } from 'lucide-react';
+import {
+  Sparkles,
+  RefreshCw,
+  Cpu,
+  BrainCircuit,
+} from 'lucide-react';
 import { prediccionService } from '../../services/api';
 import { PrediccionesSummary } from '../../types/prediccion';
 import { StockBadge } from '../../components/ui/StockBadge';
@@ -33,11 +38,11 @@ export const PrediccionesPage: React.FC = () => {
     try {
       const res = await prediccionService.triggerPipeline();
       setMessage(
-        `Modelo re-entrenado exitosamente en ${res.duration_seconds}s. WAPE: ${res.model_metrics?.wape || '0.0'}%`
+        `Modelo LightGBM reentrenado con éxito en ${res.duration_seconds}s. WAPE: ${res.model_metrics?.wape || '0.0'}%`
       );
       await loadSummary();
     } catch (err: any) {
-      setMessage(`Error al ejecutar entrenamiento: ${err.response?.data?.detail || err.message}`);
+      setMessage(`Error al entrenar: ${err.response?.data?.detail || err.message}`);
     } finally {
       setRetraining(false);
     }
@@ -54,28 +59,26 @@ export const PrediccionesPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Cabecera y Acción de Re-entrenamiento IA */}
-      <div className="card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Cabecera y Acción de Reentrenamiento */}
+      <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-ai-soft rounded-full text-ai">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-full bg-[#FF4A15]/20 text-[#FF4A15] flex items-center justify-center">
+              <Sparkles className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="font-display text-lg font-bold text-ink">
-                Gestión Predictiva de Inventarios (IA)
-              </h2>
-              <p className="text-xs text-ink-muted">
-                Pronóstico de demanda con LightGBM y reglas de reabastecimiento continuo
-              </p>
-            </div>
+            <h2 className="text-lg font-bold text-white tracking-tight">
+              Gestión Predictiva de Inventarios (IA)
+            </h2>
           </div>
+          <p className="text-xs text-[#8E8E93] mt-1">
+            Pronósticos de demanda a 7 días calculados con modelo LightGBM local
+          </p>
         </div>
 
         <button
           onClick={handleRetrain}
           disabled={retraining}
-          className="btn bg-ai text-on-light hover:opacity-90 font-bold h-12 px-6 shadow-card disabled:opacity-50 flex items-center gap-2 self-stretch sm:self-auto"
+          className="h-12 px-6 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold shadow-lg shadow-[#FF4A15]/30 flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer self-stretch sm:self-auto justify-center"
         >
           <RefreshCw className={`w-4 h-4 ${retraining ? 'animate-spin' : ''}`} />
           <span>{retraining ? 'Entrenando Modelo...' : 'Reentrenar Modelo (IA)'}</span>
@@ -83,105 +86,125 @@ export const PrediccionesPage: React.FC = () => {
       </div>
 
       {message && (
-        <div className="p-4 bg-ai-soft border border-ai/40 rounded-card text-ai text-xs font-semibold flex items-center gap-2 animate-pop">
+        <div className="p-4 bg-[#34D399]/15 border border-[#34D399]/30 rounded-2xl text-[#34D399] text-xs font-bold flex items-center gap-2">
           <BrainCircuit className="w-4 h-4 shrink-0" />
           <span>{message}</span>
         </div>
       )}
 
-      {/* Métricas del Modelo de IA (Réplica de «Stocks / Bonds» de la referencia) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* 3 Tarjetas de Métricas de ML (Estilo FinPoint) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Precisión WAPE */}
-        <div className="card relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="label label-dot text-ai">Precisión del Modelo (WAPE)</span>
-            <span className="pill bg-success text-on-light font-bold">↗ +4.7%</span>
+        <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3">
+            <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
+              Precisión del Modelo
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#34D399] text-black text-[11px] font-extrabold">
+              ↗ +4.7% WAPE
+            </span>
           </div>
-          <div className="mt-3 flex items-end gap-3">
-            <span className="kpi">{precision.toFixed(1)}%</span>
-            <span className="text-xs text-ink-muted mb-1.5 font-mono">WAPE {wape}% (menor es mejor)</span>
+          <div className="py-2">
+            <div className="text-4xl font-extrabold text-white font-sans">
+              {precision.toFixed(1)}%
+            </div>
+            <p className="text-xs text-[#8E8E93] mt-1 font-mono">
+              Error WAPE: {wape}% (menor es mejor)
+            </p>
           </div>
-          <div className="mt-4 h-2 rounded-full bg-hatch bg-surface-3 overflow-hidden">
+          <div className="mt-3 h-2 rounded-full bg-[#1C1C1F] bg-hatch-pattern overflow-hidden">
             <div
-              className="h-full rounded-full bg-ai transition-all duration-500"
+              className="h-full rounded-full bg-[#34D399] transition-all duration-500"
               style={{ width: `${Math.min(100, precision)}%` }}
             />
           </div>
         </div>
 
-        {/* Error Medio Absoluto MAE */}
-        <div className="card relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="label label-dot text-warning">Error Medio (MAE)</span>
-            <span className="pill bg-surface-3 text-ink-muted font-mono">Baseline 3.8</span>
+        {/* Error Medio MAE */}
+        <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3">
+            <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
+              Desviación Media (MAE)
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#1C1C1F] text-[#8E8E93] text-[11px] font-mono">
+              Baseline 3.8
+            </span>
           </div>
-          <div className="mt-3 flex items-end gap-3">
-            <span className="kpi font-mono">{mae.toFixed(2)} u</span>
-            <span className="text-xs text-ink-muted mb-1.5">desviación media por SKU</span>
+          <div className="py-2">
+            <div className="text-4xl font-extrabold text-white font-sans font-mono">
+              {mae.toFixed(2)} u
+            </div>
+            <p className="text-xs text-[#8E8E93] mt-1">desviación media diaria por SKU</p>
           </div>
-          <div className="mt-4 h-2 rounded-full bg-hatch bg-surface-3 overflow-hidden">
+          <div className="mt-3 h-2 rounded-full bg-[#1C1C1F] bg-hatch-pattern overflow-hidden">
             <div
-              className="h-full rounded-full bg-warning transition-all duration-500"
-              style={{ width: `${Math.min(100, (mae / 5) * 100)}%` }}
+              className="h-full rounded-full bg-[#FFD21F] transition-all duration-500"
+              style={{ width: `${Math.min(100, (mae / 4) * 100)}%` }}
             />
           </div>
         </div>
 
-        {/* Estado del Motor */}
-        <div className="card relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="label label-dot text-success">Estado del Pipeline</span>
-            <span className="pill bg-success-soft text-success">Activo</span>
+        {/* Cobertura del Inventario */}
+        <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3">
+            <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
+              SKUs Monitoreados
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#34D399]/20 text-[#34D399] text-[11px] font-bold">
+              ● Activo
+            </span>
           </div>
-          <div className="mt-3 flex items-end gap-3">
-            <span className="kpi text-ink">{summary?.total_productos || 28}</span>
-            <span className="text-xs text-ink-muted mb-1.5">SKUs monitoreados activamente</span>
+          <div className="py-2">
+            <div className="text-4xl font-extrabold text-white font-sans">
+              {summary?.total_productos || 28}
+            </div>
+            <p className="text-xs text-[#8E8E93] mt-1">productos con inferencia continua</p>
           </div>
-          <div className="mt-4 flex items-center gap-2 text-[11px] text-ink-muted">
-            <Cpu className="w-3.5 h-3.5 text-ai" />
-            <span>LightGBM Regressor · Inferencia en &lt; 2s</span>
+          <div className="mt-3 flex items-center gap-2 text-[11px] text-[#8E8E93]">
+            <Cpu className="w-3.5 h-3.5 text-[#FF4A15]" />
+            <span>Tiempo de inferencia: &lt; 2 segundos</span>
           </div>
         </div>
       </div>
 
-      {/* Resumen Ejecutivo en Lenguaje Natural («Industry Insights») */}
-      <section className="rounded-card border border-ai/30 bg-gradient-to-br from-ai-soft to-surface p-6 shadow-card">
-        <div className="label text-ai font-semibold">
-          <Sparkles className="w-4 h-4" />
-          <span>Resumen Ejecutivo de la IA</span>
+      {/* Resumen Ejecutivo de la IA */}
+      <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card">
+        <div className="flex items-center gap-2 text-xs font-bold text-white uppercase tracking-wider pb-3 border-b border-white/[0.06]">
+          <Sparkles className="w-4 h-4 text-[#FF4A15]" />
+          <span>Resumen Ejecutivo de la Inteligencia Artificial</span>
         </div>
-        <p className="mt-3 text-[14px] leading-relaxed text-ink">
+        <p className="text-sm text-[#8E8E93] leading-relaxed pt-3">
           {summary?.alertas?.[0]?.resumen_ejecutivo ||
             'El modelo proyecta una demanda estable para las líneas de abarrotes de alta rotación (arroz, aceite y lácteos). Se sugiere priorizar órdenes de compra para los SKUs con cobertura inferior a 3 días a fin de evitar quiebres de inventario durante el fin de semana.'}
         </p>
-      </section>
+      </div>
 
-      {/* Tabla de Compra Sugerida y Reabastecimiento */}
-      <div className="card p-0 overflow-hidden">
-        <div className="p-4 border-b border-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      {/* Tabla de Compra Sugerida */}
+      <div className="bg-[#141416] rounded-[28px] border border-white/[0.08] p-6 shadow-card space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-white/[0.06]">
           <div>
-            <h3 className="font-display font-bold text-sm text-ink">
-              Plan de Reabastecimiento Sugerido
+            <h3 className="text-base font-bold text-white tracking-tight">
+              Plan de Reabastecimiento Sugerido (7 Días)
             </h3>
-            <p className="text-xs text-ink-muted">
-              Cálculo de cobertura y orden de compra recomendada para los próximos 7 días
+            <p className="text-xs text-[#8E8E93] mt-0.5">
+              Demanda estimada y compras calculadas automáticamente
             </p>
           </div>
 
-          <div className="flex items-center gap-1 rounded-full border border-line bg-surface-2 p-1">
+          <div className="flex items-center gap-1 bg-[#1C1C1F] p-1 rounded-full border border-white/[0.06]">
             {[
               { id: 'todos', label: 'Todos' },
-              { id: 'critico', label: 'Críticos' },
-              { id: 'bajo', label: 'Bajos' },
-              { id: 'optimo', label: 'Óptimos' },
+              { id: 'critico', label: 'Crítico' },
+              { id: 'advertencia', label: 'Bajo' },
+              { id: 'optimo', label: 'Óptimo' },
             ].map((f) => (
               <button
                 key={f.id}
                 onClick={() => setFilterNivel(f.id)}
-                className={`rounded-full px-3 h-7 text-xs font-semibold transition ${
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
                   filterNivel === f.id
-                    ? 'bg-ink text-canvas'
-                    : 'text-ink-muted hover:text-ink'
+                    ? 'bg-white text-black shadow-sm'
+                    : 'text-[#8E8E93] hover:text-white'
                 }`}
               >
                 {f.label}
@@ -191,28 +214,28 @@ export const PrediccionesPage: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="card p-12 text-center text-ink-muted text-sm">Cargando pronósticos de IA...</div>
+          <div className="p-12 text-center text-[#8E8E93] text-sm">Cargando pronósticos de IA...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-surface-2 border-b border-line text-ink-muted font-medium">
+              <thead className="border-b border-white/[0.06] text-[#8E8E93] font-semibold uppercase tracking-wider">
                 <tr>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Producto</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Stock Actual</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Demanda 7 Días</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Cobertura</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Compra Sugerida</th>
-                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Justificación IA</th>
+                  <th className="py-3 px-4">Producto</th>
+                  <th className="py-3 px-4">Stock Actual</th>
+                  <th className="py-3 px-4">Demanda 7 Días</th>
+                  <th className="py-3 px-4">Cobertura</th>
+                  <th className="py-3 px-4">Compra Sugerida</th>
+                  <th className="py-3 px-4">Justificación IA</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line-soft">
+              <tbody className="divide-y divide-white/[0.04]">
                 {filteredAlertas.map((a) => {
                   const coberturaColor =
                     a.dias_cobertura <= 3
-                      ? 'text-danger font-bold'
+                      ? 'text-[#FF4D6A] font-bold'
                       : a.dias_cobertura <= 7
-                      ? 'text-warning font-bold'
-                      : 'text-success font-bold';
+                      ? 'text-[#FFD21F] font-bold'
+                      : 'text-[#34D399] font-bold';
 
                   const motivo =
                     a.nivel_alerta === 'critico'
@@ -222,27 +245,29 @@ export const PrediccionesPage: React.FC = () => {
                       : 'Stock óptimo proyectado';
 
                   return (
-                    <tr key={a.producto_id} className="hover:bg-surface-2/60 transition h-14">
-                      <td className="py-3 px-4 font-semibold text-ink">{a.producto_nombre}</td>
+                    <tr key={a.producto_id} className="hover:bg-white/[0.02] transition-colors h-14">
+                      <td className="py-3 px-4 font-bold text-white">{a.producto_nombre}</td>
                       <td className="py-3 px-4">
                         <StockBadge stock={a.stock_actual} />
                       </td>
-                      <td className="py-3 px-4 font-mono tabular-nums text-ink">
+                      <td className="py-3 px-4 font-mono text-white">
                         {(a.demanda_diaria_estimada * 7).toFixed(1)} u
                       </td>
-                      <td className={`py-3 px-4 font-mono tabular-nums ${coberturaColor}`}>
+                      <td className={`py-3 px-4 font-mono ${coberturaColor}`}>
                         {a.dias_cobertura.toFixed(1)} días
                       </td>
                       <td className="py-3 px-4">
                         {a.cantidad_sugerida > 0 ? (
-                          <span className="pill bg-ai-soft text-ai font-mono font-bold">
+                          <span className="px-3 py-1 rounded-full bg-[#FF4A15]/20 text-[#FF4A15] font-mono font-bold text-xs">
                             +{a.cantidad_sugerida} u
                           </span>
                         ) : (
-                          <span className="pill bg-surface-3 text-ink-muted font-mono">0 u</span>
+                          <span className="px-3 py-1 rounded-full bg-[#1C1C1F] text-[#8E8E93] font-mono text-xs">
+                            0 u
+                          </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-ink-muted max-w-xs truncate">{motivo}</td>
+                      <td className="py-3 px-4 text-[#8E8E93] max-w-xs truncate">{motivo}</td>
                     </tr>
                   );
                 })}

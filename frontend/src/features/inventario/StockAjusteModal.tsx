@@ -46,39 +46,39 @@ export const StockAjusteModal: React.FC<StockAjusteModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <div className="glass card max-w-md w-full p-6 shadow-pop animate-pop border border-line">
-        <div className="flex justify-between items-center border-b border-line pb-3 mb-4">
-          <h3 className="font-display font-bold text-base text-ink">Ajuste de Stock / Kardex</h3>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+      <div className="bg-[#141416] rounded-[28px] border border-white/[0.1] max-w-md w-full p-7 shadow-2xl animate-pop text-white">
+        <div className="flex justify-between items-center pb-3 border-b border-white/[0.08] mb-4">
+          <h3 className="font-extrabold text-base text-white">Ajuste de Stock / Kardex</h3>
           <button
             onClick={onClose}
-            className="p-1 rounded-full text-ink-muted hover:text-ink hover:bg-surface-3 transition"
+            className="w-8 h-8 rounded-full bg-[#1C1C1F] border border-white/[0.08] flex items-center justify-center text-[#8E8E93] hover:text-white transition"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="card bg-surface-2 p-3 border-line">
-            <span className="text-[11px] text-ink-faint uppercase font-semibold">Producto</span>
-            <p className="font-bold text-ink text-sm mt-0.5">{producto.nombre}</p>
-            <p className="text-xs text-brand-500 font-medium mt-0.5">
-              Stock actual: <span className="font-mono font-bold">{producto.stock_actual}</span> unidades
+          <div className="bg-[#1C1C1F] p-4 rounded-[20px] border border-white/[0.06]">
+            <span className="text-[11px] text-[#8E8E93] uppercase font-bold tracking-wider">Producto</span>
+            <p className="font-bold text-white text-sm mt-0.5">{producto.nombre}</p>
+            <p className="text-xs text-[#FF4A15] font-semibold mt-1">
+              Stock actual: <span className="font-mono font-bold text-white">{producto.stock_actual}</span> unidades
             </p>
           </div>
 
           {error && (
-            <div className="p-2.5 bg-danger-soft border border-danger/30 text-danger text-xs rounded-chip text-center font-medium">
+            <div className="p-2.5 bg-[#FF4D6A]/20 border border-[#FF4D6A]/30 text-[#FF4D6A] text-xs rounded-xl text-center font-bold">
               {error}
             </div>
           )}
 
           <div>
-            <label className="label mb-1">Tipo de Movimiento</label>
+            <label className="text-xs font-bold text-[#8E8E93] mb-1.5 block">Tipo de Movimiento</label>
             <select
               value={tipo}
               onChange={(e: any) => setTipo(e.target.value)}
-              className="w-full text-xs font-medium"
+              className="w-full h-11 px-4 bg-[#1C1C1F] border border-white/[0.08] rounded-full text-xs font-semibold text-white focus:outline-none focus:border-white/30"
             >
               <option value="compra">Compra / Entrada de Proveedor (+)</option>
               <option value="ajuste_positivo">Ajuste Positivo por Conteo Físico (+)</option>
@@ -87,37 +87,41 @@ export const StockAjusteModal: React.FC<StockAjusteModalProps> = ({
           </div>
 
           <div>
-            <label className="label mb-1">Cantidad de Unidades</label>
+            <label className="text-xs font-bold text-[#8E8E93] mb-1.5 block">Cantidad de Unidades</label>
             <input
               type="number"
               min="1"
               required
               value={cantidad}
               onChange={(e) => setCantidad(Number(e.target.value))}
-              className="w-full font-display text-kpi text-center font-bold"
+              className="w-full h-12 bg-[#1C1C1F] border border-white/[0.08] rounded-full text-center text-xl font-mono font-bold text-white focus:outline-none focus:border-[#FF4A15]"
             />
           </div>
 
           <div>
-            <label className="label mb-1">Motivo / Justificación</label>
+            <label className="text-xs font-bold text-[#8E8E93] mb-1.5 block">Motivo / Justificación</label>
             <input
               type="text"
               required
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
-              placeholder="Ej: Ingreso de factura 001-230 o merma por rotura"
-              className="w-full text-xs"
+              placeholder="Ej: Factura F001-230 o merma física"
+              className="w-full h-11 px-4 bg-[#1C1C1F] border border-white/[0.08] rounded-full text-xs text-white focus:outline-none focus:border-white/30"
             />
           </div>
 
-          <div className="flex gap-2 pt-2">
-            <button type="button" onClick={onClose} className="btn-ghost flex-1 h-12 text-xs">
+          <div className="flex gap-2.5 pt-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 h-12 rounded-full bg-[#1C1C1F] border border-white/[0.08] text-xs font-bold text-[#8E8E93] hover:text-white"
+            >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary flex-1 h-12 shadow-hero text-xs font-bold"
+              className="flex-1 h-12 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold shadow-lg shadow-[#FF4A15]/30"
             >
               {loading ? 'Guardando...' : 'Confirmar Ajuste'}
             </button>
