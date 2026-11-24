@@ -2,13 +2,11 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   Sparkles,
-  Search,
-  Bell,
   LogOut,
-  Layers,
   ShoppingCart,
   Package,
   Receipt,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useCartStore } from '../../stores/useCartStore';
@@ -34,23 +32,23 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0A0C] text-white flex flex-col antialiased selection:bg-[#FF4A15] selection:text-white">
-      {/* Top Header estilo FinPoint */}
+      {/* Top Header Limpio y Funcional */}
       <header className="sticky top-0 z-40 px-4 sm:px-8 pt-4 pb-2 bg-[#0A0A0C]/90 backdrop-blur-xl">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
-          {/* Logo FinPoint style */}
+          {/* Logo y Nombre del Minimarket */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-[#0A0A0C] shadow-lg shadow-emerald-500/20">
-              <Layers className="w-5 h-5 text-black" />
+            <div className="w-9 h-9 rounded-xl bg-[#FF4A15] flex items-center justify-center text-white shadow-lg shadow-[#FF4A15]/20">
+              <Store className="w-5 h-5" />
             </div>
-            <div className="flex items-baseline gap-1">
-              <span className="font-extrabold text-lg tracking-tight text-white font-sans">
-                BuenVecino
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-extrabold text-base sm:text-lg tracking-tight text-white font-sans">
+                El Buen Vecino
               </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span className="text-[11px] text-[#8E8E93] font-mono hidden sm:inline">POS</span>
             </div>
           </div>
 
-          {/* Segmented Pill Navigation Central (Idéntica a FinPoint) */}
+          {/* Navegación Central en Píldora */}
           <nav className="flex items-center gap-1 bg-[#141416] p-1.5 rounded-full border border-white/[0.08] shadow-inner overflow-x-auto">
             {navItems.map((item) => (
               <NavLink
@@ -74,50 +72,30 @@ export const Layout: React.FC = () => {
             ))}
           </nav>
 
-          {/* Acciones Derecha (Círculos FinPoint) */}
+          {/* Información Real de Sesión y Salida */}
           <div className="flex items-center gap-2.5">
-            {/* Botón Buscar */}
-            <button
-              title="Buscar"
-              className="w-10 h-10 rounded-full bg-[#141416] border border-white/[0.08] flex items-center justify-center text-[#8E8E93] hover:text-white hover:border-white/20 transition-all"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-
-            {/* Botón Notificaciones */}
-            <button
-              title="Notificaciones"
-              className="w-10 h-10 rounded-full bg-[#141416] border border-white/[0.08] flex items-center justify-center text-[#8E8E93] hover:text-white hover:border-white/20 transition-all relative"
-            >
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-[#FF4A15]"></span>
-            </button>
-
-            {/* Avatar de Usuario FinPoint */}
-            <div className="flex items-center gap-2 pl-1">
-              <div
-                title={`${user?.nombre} (${user?.rol})`}
-                className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-indigo-500 p-0.5 flex items-center justify-center cursor-pointer shadow-md"
-              >
-                <div className="w-full h-full rounded-full bg-[#141416] flex items-center justify-center text-xs font-bold text-white uppercase">
-                  {user?.nombre?.slice(0, 2) || 'AD'}
-                </div>
-              </div>
-
-              {/* Botón Cerrar Sesión */}
-              <button
-                onClick={handleLogout}
-                title="Cerrar sesión"
-                className="w-9 h-9 rounded-full bg-[#141416] border border-white/[0.08] flex items-center justify-center text-[#8E8E93] hover:text-[#FF4D6A] hover:border-[#FF4D6A]/30 transition-all ml-1"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
+            {/* Chip de Usuario */}
+            <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#141416] border border-white/[0.08] text-xs">
+              <span className="font-bold text-white">{user?.nombre}</span>
+              <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-white/[0.06] text-[#8E8E93]">
+                {user?.rol}
+              </span>
             </div>
+
+            {/* Botón Salir Funcional */}
+            <button
+              onClick={handleLogout}
+              title="Cerrar sesión"
+              className="h-9 px-3.5 rounded-full bg-[#141416] border border-white/[0.08] hover:border-[#FF4D6A]/40 hover:text-[#FF4D6A] text-[#8E8E93] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Cerrar Sesión</span>
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Contenido Principal con marco espaciado */}
+      {/* Contenido Principal */}
       <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-8 py-4 sm:py-6">
         <Outlet />
       </main>
