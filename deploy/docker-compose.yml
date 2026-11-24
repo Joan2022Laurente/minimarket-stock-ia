@@ -1,0 +1,149 @@
+# ==============================================================================
+# deploy/docker-compose.yml
+# Orquestación completa de servicios en AWS EC2 (t4g.small Graviton2 ARM64)
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # 1. Reverse Proxy y TLS Automático con Let's Encrypt
+  caddy:
+    image: caddy:2-alpine
+    container_name: buenvecino-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - red-buenvecino
+    depends_on:
+      - backend
+      - frontend
+
+  # 2. Backend FastAPI + Worker de Machine Learning (LightGBM)
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: buenvecino-backend
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=production
+      - PROJECT_NAME=Minimarket El Buen Vecino
+      - API_V1_STR=/api/v1
+      - DATABASE_URL=${DATABASE_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_S3_BACKUP_BUCKET=${AWS_S3_BACKUP_BUCKET}
+    networks:
+      - red-buenvecino
+    deploy:
+      resources:
+        limits:
+          memory: 450M
+
+  # 3. Frontend PWA (React + Vite)
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: buenvecino-frontend
+    restart: unless-stopped
+    networks:
+      - red-buenvecino
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+
+  # 4. Prometheus (Scrape métricas de FastAPI y Exporters)
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: buenvecino-prometheus
+    restart: unless-stopped
+    volumes:
+      - ../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+    networks:
+      - red-buenvecino
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+
+  # 5. Grafana (Dashboards ALT-01 a ALT-06)
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: buenvecino-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      - red-buenvecino
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+
+  # 6. cAdvisor (Métricas de contenedores Docker)
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: buenvecino-cadvisor
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - red-buenvecino
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+
+  # 7. Node Exporter (Métricas del host EC2: CPU, RAM, Disco)
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: buenvecino-node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+    networks:
+      - red-buenvecino
+    deploy:
+      resources:
+        limits:
+          memory: 80M
+
+networks:
+  red-buenvecino:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  prometheus_data:
+  grafana_data:

@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # 1. Backend FastAPI (Métricas de negocio, latencia y Machine Learning)
+  - job_name: 'fastapi-backend'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['backend:8000']
+        labels:
+          app: 'minimarket-backend'
+          env: 'production'
+
+  # 2. cAdvisor (Uso de CPU, RAM y red por contenedor Docker)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          app: 'docker-containers'
+
+  # 3. Node Exporter (Métricas del host EC2: CPU, memoria, disco gp3, swap)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          app: 'ec2-host'

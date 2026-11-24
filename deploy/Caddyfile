@@ -1,0 +1,38 @@
+# ==============================================================================
+# deploy/Caddyfile
+# Reverse Proxy y gestión automática de certificados SSL/TLS con Let's Encrypt
+# ==============================================================================
+
+# Si se usa dominio o DuckDNS: reemplazar por tu dominio real (ej. buenvecino.duckdns.org)
+:80, :443 {
+    # Compresión moderna para transferencias ultrarrápidas
+    encode zstd gzip
+
+    # Redirección de peticiones de API al contenedor Backend FastAPI
+    handle /api/* {
+        reverse_proxy backend:8000
+    }
+
+    # Endpoint de métricas para scraping interno o túnel
+    handle /metrics {
+        reverse_proxy backend:8000
+    }
+
+    # Healthcheck para balanceadores o monitores de uptime
+    handle /health {
+        reverse_proxy backend:8000
+    }
+
+    # Todo el tráfico restante es servido por el Frontend PWA (Single Page Application)
+    handle {
+        reverse_proxy frontend:80
+    }
+
+    # Cabeceras de Seguridad HSTS y Anti-Clickjacking (Calificación SSL Labs A+)
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
