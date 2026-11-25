@@ -15,9 +15,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) 
 
   if (requiredRole && user?.rol !== requiredRole && user?.rol !== 'administrador') {
     return (
-      <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 shadow-sm max-w-md mx-auto mt-12">
-        <h3 className="text-lg font-bold text-slate-800">Acceso Restringido</h3>
-        <p className="text-sm text-slate-500 mt-2">
+      <div className="p-8 text-center bg-[#141416] rounded-card border border-white/[0.08] max-w-md mx-auto mt-12">
+        <h3 className="text-lg font-extrabold text-white">Acceso Restringido</h3>
+        <p className="text-xs text-[#8E8E93] mt-2 leading-relaxed">
           Esta sección está reservada exclusivamente para el administrador del minimarket.
         </p>
       </div>

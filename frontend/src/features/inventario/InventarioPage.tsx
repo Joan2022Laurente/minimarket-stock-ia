@@ -12,8 +12,11 @@ import { ProductoFormModal } from './ProductoFormModal';
 import { StockBadge } from '../../components/ui/StockBadge';
 import { StatBar } from '../../components/ui/StatBar';
 import { Producto } from '../../types/producto';
+import { useAuthStore } from '../../stores/useAuthStore';
 
 export const InventarioPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const isAdmin = user?.rol === 'administrador';
   const [items, setItems] = useState<any[]>([]);
   const [catalogo, setCatalogo] = useState<Producto[]>([]);
   const [kardex, setKardex] = useState<any[]>([]);
@@ -28,19 +31,19 @@ export const InventarioPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [isAdmin]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [stockData, kardexData, prodsData] = await Promise.all([
+      const [stockData, prodsData, kardexData] = await Promise.all([
         inventarioService.listStatus(),
-        inventarioService.getKardex(),
         productoService.list(),
+        isAdmin ? inventarioService.getKardex() : Promise.resolve([]),
       ]);
       setItems(stockData);
-      setKardex(kardexData);
       setCatalogo(prodsData);
+      setKardex(kardexData);
     } catch (err) {
       console.error('Error cargando inventario:', err);
     } finally {
@@ -167,16 +170,18 @@ export const InventarioPage: React.FC = () => {
             >
               Niveles de Stock ({items.length})
             </button>
-            <button
-              onClick={() => setActiveTab('kardex')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-colors ${
-                activeTab === 'kardex'
-                  ? 'bg-white text-black'
-                  : 'text-[#8E8E93] hover:text-white'
-              }`}
-            >
-              Kardex / Movimientos ({kardex.length})
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setActiveTab('kardex')}
+                className={`px-5 py-2 rounded-full text-xs font-bold transition-colors ${
+                  activeTab === 'kardex'
+                    ? 'bg-white text-black'
+                    : 'text-[#8E8E93] hover:text-white'
+                }`}
+              >
+                Kardex / Movimientos ({kardex.length})
+              </button>
+            )}
           </div>
 
           {/* Buscador y Filtro por Estado */}
@@ -214,14 +219,16 @@ export const InventarioPage: React.FC = () => {
                 ))}
               </div>
 
-              <button
-                type="button"
-                onClick={handleOpenCreateProducto}
-                className="h-10 px-4 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold flex items-center gap-1.5 transition-colors"
-              >
-                <PackagePlus className="w-3.5 h-3.5" />
-                <span>Nuevo Producto</span>
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleOpenCreateProducto}
+                  className="h-10 px-4 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold flex items-center gap-1.5 transition-colors"
+                >
+                  <PackagePlus className="w-3.5 h-3.5" />
+                  <span>Nuevo Producto</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -239,7 +246,7 @@ export const InventarioPage: React.FC = () => {
                   <th className="py-3 px-4">Categoría</th>
                   <th className="py-3 px-4">Capacidad de Almacén</th>
                   <th className="py-3 px-4">Stock</th>
-                  <th className="py-3 px-4 text-right">Acción</th>
+                  {isAdmin && <th className="py-3 px-4 text-right">Acción</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
@@ -271,36 +278,38 @@ export const InventarioPage: React.FC = () => {
                     <td className="py-3 px-4">
                       <StockBadge stock={prod.stock_actual} min={prod.stock_minimo} />
                     </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="inline-flex items-center gap-1.5">
-                        <button
-                          onClick={() => {
-                            setSelectedProd(prod);
-                            setIsModalOpen(true);
-                          }}
-                          className="px-3 py-1.5 rounded-full bg-[#1C1C1F] border border-white/[0.08] hover:border-white/30 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-colors"
-                        >
-                          <PlusCircle className="w-3.5 h-3.5 text-[#FF4A15]" />
-                          <span>Ajustar</span>
-                        </button>
-                        <button
-                          type="button"
-                          title="Editar producto"
-                          onClick={() => handleOpenEditProducto(prod.id)}
-                          className="w-8 h-8 rounded-full bg-[#1C1C1F] border border-white/[0.08] hover:border-white/30 text-[#8E8E93] hover:text-white inline-flex items-center justify-center transition-colors"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          title="Desactivar producto"
-                          onClick={() => handleDeleteProducto(prod.id, prod.nombre)}
-                          className="w-8 h-8 rounded-full bg-[#1C1C1F] border border-white/[0.08] hover:border-[#FF4D6A]/60 text-[#8E8E93] hover:text-[#FF4D6A] inline-flex items-center justify-center transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
+                    {isAdmin && (
+                      <td className="py-3 px-4 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setSelectedProd(prod);
+                              setIsModalOpen(true);
+                            }}
+                            className="px-3 py-1.5 rounded-full bg-[#1C1C1F] border border-white/[0.08] hover:border-white/30 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-colors"
+                          >
+                            <PlusCircle className="w-3.5 h-3.5 text-[#FF4A15]" />
+                            <span>Ajustar</span>
+                          </button>
+                          <button
+                            type="button"
+                            title="Editar producto"
+                            onClick={() => handleOpenEditProducto(prod.id)}
+                            className="w-8 h-8 rounded-full bg-[#1C1C1F] border border-white/[0.08] hover:border-white/30 text-[#8E8E93] hover:text-white inline-flex items-center justify-center transition-colors"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Desactivar producto"
+                            onClick={() => handleDeleteProducto(prod.id, prod.nombre)}
+                            className="w-8 h-8 rounded-full bg-[#1C1C1F] border border-white/[0.08] hover:border-[#FF4D6A]/60 text-[#8E8E93] hover:text-[#FF4D6A] inline-flex items-center justify-center transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

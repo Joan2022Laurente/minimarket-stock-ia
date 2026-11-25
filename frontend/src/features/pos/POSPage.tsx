@@ -139,9 +139,16 @@ export const POSPage: React.FC = () => {
                 type="text"
                 value={barcodeInput}
                 onChange={(e) => setBarcodeInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleBarcodeSubmit(e);
+                  }
+                }}
                 placeholder="Escanear código de barras..."
                 className="w-full h-11 pl-11 pr-4 bg-[#1C1C1F] border border-[#FF4A15]/60 rounded-full text-xs font-mono text-white placeholder-[#5C5C62] focus:outline-none focus:border-[#FF4A15]"
               />
+              <button type="submit" className="sr-only" tabIndex={-1}>Buscar</button>
             </form>
           </div>
 
