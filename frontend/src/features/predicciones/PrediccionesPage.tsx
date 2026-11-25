@@ -60,7 +60,7 @@ export const PrediccionesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Cabecera y Acción de Reentrenamiento */}
-      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-[#FF4A15]/20 text-[#FF4A15] flex items-center justify-center">
@@ -78,7 +78,7 @@ export const PrediccionesPage: React.FC = () => {
         <button
           onClick={handleRetrain}
           disabled={retraining}
-          className="h-12 px-6 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold shadow-lg shadow-[#FF4A15]/30 flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer self-stretch sm:self-auto justify-center"
+          className="h-12 px-6 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold flex items-center gap-2 transition-colors disabled:opacity-50 cursor-pointer self-stretch sm:self-auto justify-center"
         >
           <RefreshCw className={`w-4 h-4 ${retraining ? 'animate-spin' : ''}`} />
           <span>{retraining ? 'Entrenando Modelo...' : 'Reentrenar Modelo (IA)'}</span>
@@ -92,10 +92,10 @@ export const PrediccionesPage: React.FC = () => {
         </div>
       )}
 
-      {/* 3 Tarjetas de Métricas de ML (Estilo FinPoint) */}
+      {/* 3 Tarjetas de Métricas de ML */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Precisión WAPE */}
-        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
               Precisión del Modelo
@@ -121,7 +121,7 @@ export const PrediccionesPage: React.FC = () => {
         </div>
 
         {/* Error Medio MAE */}
-        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
               Desviación Media (MAE)
@@ -145,7 +145,7 @@ export const PrediccionesPage: React.FC = () => {
         </div>
 
         {/* Cobertura del Inventario */}
-        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
               SKUs Monitoreados
@@ -168,7 +168,7 @@ export const PrediccionesPage: React.FC = () => {
       </div>
 
       {/* Resumen Ejecutivo de la IA */}
-      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card">
+      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6">
         <div className="flex items-center gap-2 text-xs font-bold text-white uppercase tracking-wider pb-3 border-b border-white/[0.06]">
           <Sparkles className="w-4 h-4 text-[#FF4A15]" />
           <span>Resumen Ejecutivo de la Inteligencia Artificial</span>
@@ -180,7 +180,7 @@ export const PrediccionesPage: React.FC = () => {
       </div>
 
       {/* Tabla de Compra Sugerida */}
-      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card space-y-4">
+      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-white/[0.06]">
           <div>
             <h3 className="text-base font-bold text-white tracking-tight">
@@ -201,9 +201,9 @@ export const PrediccionesPage: React.FC = () => {
               <button
                 key={f.id}
                 onClick={() => setFilterNivel(f.id)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
                   filterNivel === f.id
-                    ? 'bg-white text-black shadow-sm'
+                    ? 'bg-white text-black'
                     : 'text-[#8E8E93] hover:text-white'
                 }`}
               >

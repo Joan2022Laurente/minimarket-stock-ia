@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   PlusCircle,
@@ -85,10 +85,10 @@ export const InventarioPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 3 Tarjetas KPI Superiores de Inventario Real con Estética FinPoint */}
+      {/* 3 Tarjetas KPI Superiores de Inventario Real con Diseño Plano Sólido */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {/* Crítico */}
-        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
               Stock Crítico
@@ -109,7 +109,7 @@ export const InventarioPage: React.FC = () => {
         </div>
 
         {/* Bajo */}
-        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
               Stock Bajo
@@ -130,7 +130,7 @@ export const InventarioPage: React.FC = () => {
         </div>
 
         {/* Óptimo */}
-        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card flex flex-col justify-between">
+        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">
               Stock Saludable
@@ -152,16 +152,16 @@ export const InventarioPage: React.FC = () => {
       </div>
 
       {/* Contenedor Principal: Filtros y Tabla */}
-      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card space-y-5">
+      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 space-y-5">
         {/* Pestañas y Filtros */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-white/[0.06]">
           {/* Pestañas en Píldora */}
           <div className="flex items-center gap-1 bg-[#0A0A0C] p-1.5 rounded-full border border-white/[0.08]">
             <button
               onClick={() => setActiveTab('stock')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
+              className={`px-5 py-2 rounded-full text-xs font-bold transition-colors ${
                 activeTab === 'stock'
-                  ? 'bg-white text-black shadow-md'
+                  ? 'bg-white text-black'
                   : 'text-[#8E8E93] hover:text-white'
               }`}
             >
@@ -169,9 +169,9 @@ export const InventarioPage: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('kardex')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
+              className={`px-5 py-2 rounded-full text-xs font-bold transition-colors ${
                 activeTab === 'kardex'
-                  ? 'bg-white text-black shadow-md'
+                  ? 'bg-white text-black'
                   : 'text-[#8E8E93] hover:text-white'
               }`}
             >
@@ -203,9 +203,9 @@ export const InventarioPage: React.FC = () => {
                   <button
                     key={f.id}
                     onClick={() => setFilterEstado(f.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
                       filterEstado === f.id
-                        ? 'bg-white text-black shadow-sm'
+                        ? 'bg-white text-black'
                         : 'text-[#8E8E93] hover:text-white'
                     }`}
                   >
@@ -217,7 +217,7 @@ export const InventarioPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleOpenCreateProducto}
-                className="h-10 px-4 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-[#FF4A15]/25 transition-all"
+                className="h-10 px-4 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold flex items-center gap-1.5 transition-colors"
               >
                 <PackagePlus className="w-3.5 h-3.5" />
                 <span>Nuevo Producto</span>

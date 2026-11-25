@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layers, Lock, Mail, ArrowRight, ShieldCheck, UserCheck, User } from 'lucide-react';
 import { authService } from '../../services/api';
@@ -54,20 +54,17 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0A0C] flex items-center justify-center p-4 selection:bg-[#FF4A15] selection:text-white">
-      <div className="bg-[#141416] rounded-card border border-white/[0.08] max-w-[440px] w-full p-8 sm:p-10 shadow-2xl relative overflow-hidden">
-        {/* Glow sutil de fondo */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-[#FF4A15]/10 blur-3xl pointer-events-none"></div>
-
-        {/* Header con Isotipo FinPoint */}
-        <div className="text-center mb-8 relative">
-          <div className="w-14 h-14 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20 text-black">
-            <Layers className="w-7 h-7" />
+      <div className="bg-[#141416] rounded-card border border-white/[0.08] max-w-[440px] w-full p-8 sm:p-10 relative">
+        {/* Header Plano y Sólido */}
+        <div className="text-center mb-8">
+          <div className="w-12 h-12 bg-[#34D399] rounded-2xl flex items-center justify-center mx-auto mb-4 text-black">
+            <Layers className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-extrabold text-white tracking-tight font-sans">
             BuenVecino POS
           </h2>
           <p className="text-xs text-[#8E8E93] mt-1 font-medium">
-            Terminal predictiva con arquitectura FinPoint
+            Gestión de ventas e inventario con IA
           </p>
         </div>
 
@@ -79,8 +76,8 @@ export const LoginPage: React.FC = () => {
               setMode('login');
               setError(null);
             }}
-            className={`flex-1 py-2 rounded-full text-xs font-bold transition-all ${
-              mode === 'login' ? 'bg-white text-black shadow-sm' : 'text-[#8E8E93] hover:text-white'
+            className={`flex-1 py-2 rounded-full text-xs font-bold transition-colors ${
+              mode === 'login' ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'
             }`}
           >
             Iniciar Sesión
@@ -91,8 +88,8 @@ export const LoginPage: React.FC = () => {
               setMode('register');
               setError(null);
             }}
-            className={`flex-1 py-2 rounded-full text-xs font-bold transition-all ${
-              mode === 'register' ? 'bg-white text-black shadow-sm' : 'text-[#8E8E93] hover:text-white'
+            className={`flex-1 py-2 rounded-full text-xs font-bold transition-colors ${
+              mode === 'register' ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'
             }`}
           >
             Registrar Cajero
@@ -161,11 +158,11 @@ export const LoginPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Gran Botón Blanco Estilo FinPoint */}
+          {/* Gran Botón Blanco Sólido */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-14 bg-white hover:bg-neutral-100 text-black font-extrabold text-sm rounded-full transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer mt-2 disabled:opacity-50"
+            className="w-full h-14 bg-white hover:bg-neutral-200 text-black font-extrabold text-sm rounded-full transition-colors flex items-center justify-center gap-2 cursor-pointer mt-2 disabled:opacity-50"
           >
             <span>
               {loading
@@ -187,9 +184,9 @@ export const LoginPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleQuickLogin('admin@elbuenvecino.com', 'admin123')}
-              className={`p-3 rounded-tile text-left transition-all bg-[#1C1C1F] border ${
+              className={`p-3 rounded-tile text-left transition-colors bg-[#1C1C1F] border ${
                 email === 'admin@elbuenvecino.com'
-                  ? 'border-[#FF4A15] shadow-[0_0_15px_rgba(255,74,21,0.25)]'
+                  ? 'border-[#FF4A15]'
                   : 'border-white/[0.06] hover:border-white/20'
               }`}
             >
@@ -203,9 +200,9 @@ export const LoginPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleQuickLogin('cajero1@elbuenvecino.com', 'cajero123')}
-              className={`p-3 rounded-tile text-left transition-all bg-[#1C1C1F] border ${
+              className={`p-3 rounded-tile text-left transition-colors bg-[#1C1C1F] border ${
                 email === 'cajero1@elbuenvecino.com'
-                  ? 'border-[#34D399] shadow-[0_0_15px_rgba(52,211,153,0.25)]'
+                  ? 'border-[#34D399]'
                   : 'border-white/[0.06] hover:border-white/20'
               }`}
             >

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   ScanBarcode,
@@ -101,11 +101,11 @@ export const POSPage: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 min-h-[calc(100vh-7rem)]">
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_370px] xl:grid-cols-[minmax(0,1fr)_400px] gap-6 min-h-[calc(100vh-7rem)] items-start">
       {/* Columna Izquierda: Búsqueda y Catálogo de Productos del Minimarket */}
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5 min-w-0">
         {/* Barra de Filtros y Entradas */}
-        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-5 shadow-card space-y-4">
+        <div className="bg-[#141416] rounded-card border border-white/[0.08] p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-extrabold text-white tracking-tight">
@@ -153,12 +153,12 @@ export const POSPage: React.FC = () => {
           )}
 
           {/* Pestañas de Categorías estilo FinPoint Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pt-1 pb-1">
+          <div className="flex items-center gap-2 flex-wrap pt-1 pb-1">
             <button
               onClick={() => handleCategoriaSelect(null)}
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-colors whitespace-nowrap ${
                 selectedCategoria === null
-                  ? 'bg-white text-black shadow-md'
+                  ? 'bg-white text-black'
                   : 'bg-[#1C1C1F] text-[#8E8E93] border border-white/[0.06] hover:text-white'
               }`}
             >
@@ -168,9 +168,9 @@ export const POSPage: React.FC = () => {
               <button
                 key={cat.id}
                 onClick={() => handleCategoriaSelect(cat.id)}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-colors whitespace-nowrap ${
                   selectedCategoria === cat.id
-                    ? 'bg-white text-black shadow-md'
+                    ? 'bg-white text-black'
                     : 'bg-[#1C1C1F] text-[#8E8E93] border border-white/[0.06] hover:text-white'
                 }`}
               >
@@ -181,7 +181,7 @@ export const POSPage: React.FC = () => {
         </div>
 
         {/* Cuadrícula de Productos */}
-        <div className="flex-1 overflow-y-auto pr-1">
+        <div className="flex-1 min-w-0">
           {loading ? (
             <div className="p-12 text-center text-[#8E8E93] text-sm">Cargando catálogo...</div>
           ) : productos.length === 0 ? (
@@ -199,12 +199,12 @@ export const POSPage: React.FC = () => {
                     key={prod.id}
                     disabled={out}
                     onClick={() => triggerAddItem(prod)}
-                    className={`group relative flex flex-col justify-between min-h-[148px] p-4 text-left rounded-tile border transition-all duration-150 ${
+                    className={`group relative flex flex-col justify-between min-h-[148px] p-4 text-left rounded-tile border transition-colors duration-150 ${
                       out
                         ? 'bg-[#141416] border-white/[0.04] opacity-50 cursor-not-allowed bg-hatch-pattern'
                         : justAdded
-                        ? 'bg-[#1C1C1F] border-[#FF4A15] shadow-[0_0_20px_rgba(255,74,21,0.3)] scale-[0.98]'
-                        : 'bg-[#141416] border-white/[0.08] hover:bg-[#1C1C1F] hover:border-white/20 hover:-translate-y-1'
+                        ? 'bg-[#1C1C1F] border-[#FF4A15]'
+                        : 'bg-[#141416] border-white/[0.08] hover:bg-[#1C1C1F] hover:border-white/25'
                     }`}
                   >
                     <div>
@@ -213,7 +213,7 @@ export const POSPage: React.FC = () => {
                           {prod.categoria_nombre || 'General'}
                         </span>
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono whitespace-nowrap shrink-0 ${
                             prod.stock_actual <= 0
                               ? 'bg-[#FF4D6A]/20 text-[#FF4D6A]'
                               : prod.stock_actual <= 5
@@ -252,7 +252,7 @@ export const POSPage: React.FC = () => {
       </div>
 
       {/* Columna Derecha: Carrito de Compras en Tarjeta FinPoint */}
-      <aside className="sticky top-20 flex h-[calc(100vh-6.5rem)] flex-col justify-between bg-[#141416] rounded-card border border-white/[0.08] p-6 shadow-card text-white">
+      <aside className="sticky top-20 flex h-[calc(100vh-6.5rem)] w-full min-w-0 flex-col justify-between bg-[#141416] rounded-card border border-white/[0.08] p-5 sm:p-6 text-white overflow-hidden">
         {/* Cabecera del Carrito */}
         <div>
           <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
@@ -331,7 +331,7 @@ export const POSPage: React.FC = () => {
                   </button>
                 </div>
 
-                <span className="font-extrabold text-xs sm:text-sm text-white font-mono w-16 text-right">
+                <span className="font-extrabold text-xs sm:text-sm text-white font-mono shrink-0 text-right">
                   S/ {(it.producto.precio_venta * it.cantidad).toFixed(2)}
                 </span>
               </div>
@@ -341,7 +341,7 @@ export const POSPage: React.FC = () => {
 
         {/* Resumen Financiero y Botón Cobrar */}
         <div className="pt-4 border-t border-white/[0.06] space-y-3">
-          <div className="flex justify-between text-xs text-[#8E8E93] font-mono">
+          <div className="flex justify-between text-xs text-[#8E8E93] font-mono gap-2">
             <span>Subtotal: S/ {getSubtotal().toFixed(2)}</span>
             <span>IGV (18%): S/ {getIgv().toFixed(2)}</span>
           </div>
@@ -349,7 +349,7 @@ export const POSPage: React.FC = () => {
           <button
             disabled={items.length === 0}
             onClick={() => setIsPaymentOpen(true)}
-            className="w-full h-14 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white font-extrabold text-sm transition-all shadow-lg shadow-[#FF4A15]/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full h-14 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white font-extrabold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <CreditCard className="w-4 h-4" />
             <span>COBRAR VENTA (F2)</span>

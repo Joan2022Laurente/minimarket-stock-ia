@@ -106,8 +106,8 @@ export const ProductoFormModal: React.FC<ProductoFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <div className="bg-[#141416] rounded-card border border-white/[0.1] max-w-lg w-full p-7 shadow-2xl animate-pop text-white">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+      <div className="bg-[#141416] rounded-card border border-white/[0.12] max-w-lg w-full p-7 animate-pop text-white">
         <div className="flex justify-between items-center pb-4 border-b border-white/[0.08] mb-5">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-full bg-[#FF4A15]/20 text-[#FF4A15] flex items-center justify-center">
@@ -265,7 +265,7 @@ export const ProductoFormModal: React.FC<ProductoFormModalProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 h-12 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold shadow-lg shadow-[#FF4A15]/30 disabled:opacity-40"
+              className="flex-1 h-12 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold disabled:opacity-40"
             >
               {loading ? 'Guardando...' : producto ? 'Guardar Cambios' : 'Crear Producto'}
             </button>

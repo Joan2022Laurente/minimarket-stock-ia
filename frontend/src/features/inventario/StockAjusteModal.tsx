@@ -46,8 +46,8 @@ export const StockAjusteModal: React.FC<StockAjusteModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <div className="bg-[#141416] rounded-card border border-white/[0.1] max-w-md w-full p-7 shadow-2xl animate-pop text-white">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+      <div className="bg-[#141416] rounded-card border border-white/[0.12] max-w-md w-full p-7 animate-pop text-white">
         <div className="flex justify-between items-center pb-3 border-b border-white/[0.08] mb-4">
           <h3 className="font-extrabold text-base text-white">Ajuste de Stock / Kardex</h3>
           <button
@@ -121,7 +121,7 @@ export const StockAjusteModal: React.FC<StockAjusteModalProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 h-12 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold shadow-lg shadow-[#FF4A15]/30"
+              className="flex-1 h-12 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold"
             >
               {loading ? 'Guardando...' : 'Confirmar Ajuste'}
             </button>
