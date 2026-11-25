@@ -43,7 +43,7 @@ export const PrediccionesKpiGrid: React.FC<PrediccionesKpiGridProps> = ({
             {precision.toFixed(1)}%
           </div>
           <p className="text-xs text-[#8E8E93] mt-1 font-mono">
-            Error porcentual ponderado (menor es mejor)
+            Exactitud global (100% − WAPE, mayor es mejor)
           </p>
         </div>
         <div className="mt-3 h-2 rounded-full bg-[#1C1C1F] overflow-hidden">

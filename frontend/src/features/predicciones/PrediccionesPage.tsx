@@ -125,22 +125,41 @@ export const PrediccionesPage: React.FC = () => {
         </div>
       )}
 
-      {/* 3 Tarjetas KPI con Métricas Reales */}
-      <PrediccionesKpiGrid
-        summary={summary}
-        reponerCount={itemsPorReponer.length}
-        totalUnidadesReponer={totalUnidadesReponer}
-      />
+      {loading && !summary ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[1, 2, 3].map((idx) => (
+              <div
+                key={idx}
+                className="bg-[#141416] rounded-card border border-white/[0.08] p-6 h-44 animate-pulse"
+              />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 h-72 animate-pulse" />
+            <div className="bg-[#141416] rounded-card border border-white/[0.08] p-6 h-72 animate-pulse" />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* 3 Tarjetas KPI con Métricas Reales */}
+          <PrediccionesKpiGrid
+            summary={summary}
+            reponerCount={itemsPorReponer.length}
+            totalUnidadesReponer={totalUnidadesReponer}
+          />
 
-      {/* Gráficos Analíticos Planos + Resumen Consolidado */}
-      <PrediccionesCharts
-        alertas={alertas}
-        criticos={counts.critico}
-        advertencias={counts.advertencia}
-        optimos={counts.optimo}
-        reponerCount={itemsPorReponer.length}
-        totalUnidadesReponer={totalUnidadesReponer}
-      />
+          {/* Gráficos Analíticos Planos + Resumen Consolidado */}
+          <PrediccionesCharts
+            alertas={alertas}
+            criticos={counts.critico}
+            advertencias={counts.advertencia}
+            optimos={counts.optimo}
+            reponerCount={itemsPorReponer.length}
+            totalUnidadesReponer={totalUnidadesReponer}
+          />
+        </>
+      )}
 
       {/* Tabla Inteligente con Prioridad, Buscador, CSV y Reposición Directa */}
       <PrediccionesTable
