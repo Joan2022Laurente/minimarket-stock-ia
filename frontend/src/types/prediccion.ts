@@ -19,6 +19,7 @@ export interface PrediccionesSummary {
   advertencias: number;
   optimos: number;
   wape_score?: number;
+  mae_score?: number;
   ultimo_entrenamiento?: string;
   alertas: PrediccionItem[];
 }

@@ -28,6 +28,7 @@ class PrediccionesSummary(BaseModel):
     advertencias: int
     optimos: int
     wape_score: Optional[float] = None
+    mae_score: Optional[float] = None
     ultimo_entrenamiento: Optional[str] = None
     alertas: List[PrediccionItem] = []
 

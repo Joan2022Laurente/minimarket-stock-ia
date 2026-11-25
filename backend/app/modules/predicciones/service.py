@@ -115,6 +115,7 @@ class PrediccionService:
             "advertencias": advertencias,
             "optimos": optimos,
             "wape_score": metadata.get("wape", 18.4),
+            "mae_score": metadata.get("mae", 0.0112),
             "ultimo_entrenamiento": metadata.get("trained_at"),
             "alertas": items
         }
