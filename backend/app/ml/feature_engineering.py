@@ -54,7 +54,12 @@ def prepare_training_features(sales_data: List[Dict[str, Any]]) -> Tuple[pd.Data
     merged["is_payday"] = fechas_dt.dt.day.isin([14, 15, 16, 29, 30, 31]).astype(int)
 
     # 7. Eliminar filas con NaN generadas por los lags iniciales
-    clean_df = merged.dropna().reset_index(drop=True)
+    # y ordenar cronológicamente por fecha global para un split temporal 80/20 real
+    clean_df = (
+        merged.dropna()
+        .sort_values(["fecha", "producto_id"])
+        .reset_index(drop=True)
+    )
 
     feature_cols = [
         "producto_id", "lag_1", "lag_7", "lag_14",

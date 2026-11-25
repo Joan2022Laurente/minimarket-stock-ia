@@ -59,27 +59,33 @@ def run_ml_pipeline() -> Dict[str, Any]:
             conn.close()
 
     if not sales_data or len(sales_data) < 20:
-        logger.warning("Pocos datos históricos en Supabase. Usando generador sintético para el modelo.")
-        # Generar dataset mínimo para entrenamiento offline/test
+        logger.warning("Pocos datos históricos en Supabase. Usando generador sintético estacional offline.")
         mock_data = []
         base_time = time.time() - (90 * 86400)
-        for i in range(90):
-            t_str = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(base_time + (i * 86400)))
-            for pid in [1, 6, 12, 14, 20]:
-                mock_data.append({"producto_id": pid, "cantidad": 2 + (i % 3), "created_at": t_str})
-        sales_data = mock_data
         productos = db_manager._in_memory_data["productos"]
+        for i in range(90):
+            t_struct = time.gmtime(base_time + (i * 86400))
+            t_str = time.strftime("%Y-%m-%d %H:%M:%S", t_struct)
+            mult = 1.4 if t_struct.tm_wday in (4, 5, 6) else 1.0
+            for prod in productos:
+                pid = prod["id"]
+                qty = max(1, int(round((1.5 + (pid % 4) * 0.7) * mult + ((i + pid) % 3) * 0.4)))
+                mock_data.append({"producto_id": pid, "cantidad": qty, "created_at": t_str})
+        sales_data = mock_data
 
     # 2. Ingeniería de Características y Entrenamiento LightGBM
     X, y = prepare_training_features(sales_data)
     model_metrics = demand_predictor.train(X, y)
 
-    # 3. Inferencia de Demanda Diaria Promedio por Producto
-    # Usamos la predicción del modelo para los datos recientes
+    # 3. Inferencia de Demanda Diaria Reciente por Producto (últimos 14 días)
     preds = demand_predictor.predict(X)
     X_eval = X.copy()
     X_eval["pred"] = preds
-    promedios_demanda = X_eval.groupby("producto_id")["pred"].mean().to_dict()
+    promedios_demanda = (
+        X_eval.groupby("producto_id", observed=True)["pred"]
+        .apply(lambda s: float(s.tail(14).mean()))
+        .to_dict()
+    )
 
     # 4. Cálculo de Métricas de Inventario y Alertas
     alertas_generadas = []

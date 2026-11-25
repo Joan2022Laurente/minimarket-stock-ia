@@ -41,28 +41,39 @@ class DemandPredictor:
         X_train, X_test = X.iloc[:split_idx], X.iloc[split_idx:]
         y_train, y_test = y.iloc[:split_idx], y.iloc[split_idx:]
 
-        # Parámetros optimizados para bajo consumo de memoria (<80 MB)
+        # Parámetros regularizados para demanda intermitente de retail (<80 MB RAM)
         self.model = LGBMRegressor(
-            objective="regression",
-            metric="rmse",
+            objective="tweedie",
+            tweedie_variance_power=1.2,
             boosting_type="gbdt",
-            n_estimators=80,
-            learning_rate=0.05,
-            num_leaves=31,
-            min_child_samples=5,
+            n_estimators=120,
+            learning_rate=0.04,
+            max_depth=4,
+            num_leaves=15,
+            min_child_samples=15,
+            subsample=0.8,
+            colsample_bytree=0.8,
             random_state=42,
             verbosity=-1
         )
 
         self.model.fit(X_train, y_train)
 
-        # Evaluación en test
+        # Evaluación en test temporal (últimos días de todos los productos)
         y_pred = self.model.predict(X_test)
         y_pred = np.clip(y_pred, 0, None)  # La demanda no puede ser negativa
 
         mae = float(mean_absolute_error(y_test, y_pred))
-        sum_actual = float(np.sum(y_test))
-        wape = float((np.sum(np.abs(y_test - y_pred)) / sum_actual) * 100) if sum_actual > 0 else 0.0
+
+        # Evaluar WAPE agregado por producto en la ventana de test (horizonte de reposición)
+        eval_df = pd.DataFrame({
+            "producto_id": X_test["producto_id"].values,
+            "y_real": y_test.values,
+            "y_pred": y_pred,
+        })
+        agg = eval_df.groupby("producto_id", observed=True)[["y_real", "y_pred"]].sum()
+        sum_actual = float(agg["y_real"].sum())
+        wape = float((np.sum(np.abs(agg["y_real"] - agg["y_pred"])) / sum_actual) * 100) if sum_actual > 0 else 0.0
 
         duration = time.perf_counter() - start_time
 

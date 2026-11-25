@@ -50,6 +50,13 @@ class PrediccionService:
             finally:
                 conn.close()
 
+        # Si el pipeline corrió en memoria, usar sus predicciones calculadas
+        mem_preds = db_manager._in_memory_data.get("predicciones", [])
+        if mem_preds:
+            if nivel_alerta is None:
+                return mem_preds
+            return [p for p in mem_preds if p.get("nivel_alerta") == nivel_alerta]
+
         # Si aún no se ha ejecutado el pipeline o la tabla está vacía, calcular al vuelo para todo el catálogo
         productos = []
         conn = db_manager.get_connection()
