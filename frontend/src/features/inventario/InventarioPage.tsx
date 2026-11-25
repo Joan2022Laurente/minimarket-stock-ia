@@ -2,14 +2,20 @@
 import {
   Search,
   PlusCircle,
+  PackagePlus,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
-import { inventarioService } from '../../services/api';
+import { inventarioService, productoService } from '../../services/api';
 import { StockAjusteModal } from './StockAjusteModal';
+import { ProductoFormModal } from './ProductoFormModal';
 import { StockBadge } from '../../components/ui/StockBadge';
 import { StatBar } from '../../components/ui/StatBar';
+import { Producto } from '../../types/producto';
 
 export const InventarioPage: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
+  const [catalogo, setCatalogo] = useState<Producto[]>([]);
   const [kardex, setKardex] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'stock' | 'kardex'>('stock');
   const [search, setSearch] = useState('');
@@ -17,6 +23,8 @@ export const InventarioPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedProd, setSelectedProd] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
+  const [isProductFormOpen, setIsProductFormOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -25,16 +33,39 @@ export const InventarioPage: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [stockData, kardexData] = await Promise.all([
+      const [stockData, kardexData, prodsData] = await Promise.all([
         inventarioService.listStatus(),
         inventarioService.getKardex(),
+        productoService.list(),
       ]);
       setItems(stockData);
       setKardex(kardexData);
+      setCatalogo(prodsData);
     } catch (err) {
       console.error('Error cargando inventario:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenCreateProducto = () => {
+    setEditingProducto(null);
+    setIsProductFormOpen(true);
+  };
+
+  const handleOpenEditProducto = (id: number) => {
+    const found = catalogo.find((p) => p.id === id) || null;
+    setEditingProducto(found);
+    setIsProductFormOpen(true);
+  };
+
+  const handleDeleteProducto = async (id: number, nombre: string) => {
+    if (!window.confirm(`¿Desactivar "${nombre}" del catálogo activo?`)) return;
+    try {
+      await productoService.remove(id);
+      await loadData();
+    } catch (err) {
+      console.error('Error desactivando producto:', err);
     }
   };
 
@@ -182,6 +213,15 @@ export const InventarioPage: React.FC = () => {
                   </button>
                 ))}
               </div>
+
+              <button
+                type="button"
+                onClick={handleOpenCreateProducto}
+                className="h-10 px-4 rounded-full bg-[#FF4A15] hover:bg-[#E63900] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-[#FF4A15]/25 transition-all"
+              >
+                <PackagePlus className="w-3.5 h-3.5" />
+                <span>Nuevo Producto</span>
+              </button>
             </div>
           )}
         </div>
@@ -207,7 +247,7 @@ export const InventarioPage: React.FC = () => {
                   <tr key={prod.id} className="hover:bg-white/[0.02] transition-colors h-14">
                     <td className="py-3 px-4 font-mono text-[#8E8E93]">{prod.codigo_barras}</td>
                     <td className="py-3 px-4 font-bold text-white">{prod.nombre}</td>
-                    <td className="py-3 px-4 text-[#8E8E93]">{prod.categoria}</td>
+                    <td className="py-3 px-4 text-[#8E8E93]">{prod.categoria_nombre || prod.categoria}</td>
                     <td className="py-3 px-4 w-48">
                       <div className="flex items-center gap-2">
                         <div className="flex-1">
@@ -232,16 +272,34 @@ export const InventarioPage: React.FC = () => {
                       <StockBadge stock={prod.stock_actual} min={prod.stock_minimo} />
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedProd(prod);
-                          setIsModalOpen(true);
-                        }}
-                        className="px-3 py-1.5 rounded-full bg-[#1C1C1F] border border-white/[0.08] hover:border-white/30 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-colors"
-                      >
-                        <PlusCircle className="w-3.5 h-3.5 text-[#FF4A15]" />
-                        <span>Ajustar</span>
-                      </button>
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            setSelectedProd(prod);
+                            setIsModalOpen(true);
+                          }}
+                          className="px-3 py-1.5 rounded-full bg-[#1C1C1F] border border-white/[0.08] hover:border-white/30 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-colors"
+                        >
+                          <PlusCircle className="w-3.5 h-3.5 text-[#FF4A15]" />
+                          <span>Ajustar</span>
+                        </button>
+                        <button
+                          type="button"
+                          title="Editar producto"
+                          onClick={() => handleOpenEditProducto(prod.id)}
+                          className="w-8 h-8 rounded-full bg-[#1C1C1F] border border-white/[0.08] hover:border-white/30 text-[#8E8E93] hover:text-white inline-flex items-center justify-center transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          title="Desactivar producto"
+                          onClick={() => handleDeleteProducto(prod.id, prod.nombre)}
+                          className="w-8 h-8 rounded-full bg-[#1C1C1F] border border-white/[0.08] hover:border-[#FF4D6A]/60 text-[#8E8E93] hover:text-[#FF4D6A] inline-flex items-center justify-center transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -301,6 +359,14 @@ export const InventarioPage: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         producto={selectedProd}
+        onSuccess={loadData}
+      />
+
+      {/* Modal Crear / Editar Producto */}
+      <ProductoFormModal
+        isOpen={isProductFormOpen}
+        onClose={() => setIsProductFormOpen(false)}
+        producto={editingProducto}
         onSuccess={loadData}
       />
     </div>

@@ -43,3 +43,23 @@ def test_historial_ventas(client, cajero_headers):
     assert response.status_code == 200
     ventas = response.json()
     assert isinstance(ventas, list)
+    assert len(ventas) >= 1
+
+    # Probar filtro por fecha (rango futuro debe devolver vacío)
+    empty_res = client.get(
+        "/api/v1/ventas?fecha_inicio=2099-01-01&fecha_fin=2099-12-31",
+        headers=cajero_headers,
+    )
+    assert empty_res.status_code == 200
+    assert empty_res.json() == []
+
+    # Probar detalle de ticket y respaldo de comprobante en S3
+    venta_id = ventas[0]["id"]
+    detail_res = client.get(f"/api/v1/ventas/{venta_id}", headers=cajero_headers)
+    assert detail_res.status_code == 200
+    assert len(detail_res.json()["items"]) >= 1
+
+    s3_res = client.post(f"/api/v1/ventas/{venta_id}/comprobante-s3", headers=cajero_headers)
+    assert s3_res.status_code == 200
+    assert s3_res.json()["success"] is True
+    assert "comprobantes/" in s3_res.json()["s3_key"]

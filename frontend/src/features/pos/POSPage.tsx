@@ -358,7 +358,11 @@ export const POSPage: React.FC = () => {
       </aside>
 
       {/* Modal de Cobro */}
-      <PaymentModal isOpen={isPaymentOpen} onClose={() => setIsPaymentOpen(false)} />
+      <PaymentModal
+        isOpen={isPaymentOpen}
+        onClose={() => setIsPaymentOpen(false)}
+        onSaleSuccess={() => loadData(selectedCategoria || undefined, search || undefined)}
+      />
     </div>
   );
 };

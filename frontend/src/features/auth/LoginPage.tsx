@@ -1,10 +1,12 @@
 ﻿import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layers, Lock, Mail, ArrowRight, ShieldCheck, UserCheck } from 'lucide-react';
+import { Layers, Lock, Mail, ArrowRight, ShieldCheck, UserCheck, User } from 'lucide-react';
 import { authService } from '../../services/api';
 import { useAuthStore } from '../../stores/useAuthStore';
 
 export const LoginPage: React.FC = () => {
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -13,13 +15,17 @@ export const LoginPage: React.FC = () => {
   const { login } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const data = await authService.login(email, password);
+      const data =
+        mode === 'login'
+          ? await authService.login(email, password)
+          : await authService.register(nombre, email, password);
+
       login(data.access_token, {
         id: data.user_id,
         nombre: data.nombre,
@@ -29,13 +35,19 @@ export const LoginPage: React.FC = () => {
       });
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al iniciar sesión. Verifique sus credenciales.');
+      setError(
+        err.response?.data?.detail ||
+          (mode === 'login'
+            ? 'Error al iniciar sesión. Verifique sus credenciales.'
+            : 'No se pudo completar el registro.')
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleQuickLogin = (quickEmail: string, quickPass: string) => {
+    setMode('login');
     setEmail(quickEmail);
     setPassword(quickPass);
   };
@@ -59,13 +71,61 @@ export const LoginPage: React.FC = () => {
           </p>
         </div>
 
+        {/* Selector Login / Registro */}
+        <div className="flex items-center gap-1 bg-[#0A0A0C] p-1 rounded-full border border-white/[0.08] mb-5">
+          <button
+            type="button"
+            onClick={() => {
+              setMode('login');
+              setError(null);
+            }}
+            className={`flex-1 py-2 rounded-full text-xs font-bold transition-all ${
+              mode === 'login' ? 'bg-white text-black shadow-sm' : 'text-[#8E8E93] hover:text-white'
+            }`}
+          >
+            Iniciar Sesión
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode('register');
+              setError(null);
+            }}
+            className={`flex-1 py-2 rounded-full text-xs font-bold transition-all ${
+              mode === 'register' ? 'bg-white text-black shadow-sm' : 'text-[#8E8E93] hover:text-white'
+            }`}
+          >
+            Registrar Cajero
+          </button>
+        </div>
+
         {error && (
           <div className="mb-6 p-3 bg-[#FF4D6A]/15 border border-[#FF4D6A]/30 rounded-2xl text-[#FF4D6A] text-xs text-center font-bold">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'register' && (
+            <div>
+              <label className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider mb-1.5 block">
+                Nombre Completo
+              </label>
+              <div className="relative">
+                <User className="w-4 h-4 text-[#8E8E93] absolute left-4 top-4 pointer-events-none" />
+                <input
+                  type="text"
+                  required
+                  minLength={2}
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Ej. Ana Torres"
+                  className="w-full h-12 pl-11 pr-4 bg-[#1C1C1F] border border-white/[0.08] rounded-full text-xs text-white placeholder-[#5C5C62] focus:outline-none focus:border-white/30"
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider mb-1.5 block">
               Correo Electrónico
@@ -92,6 +152,7 @@ export const LoginPage: React.FC = () => {
               <input
                 type="password"
                 required
+                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -106,7 +167,13 @@ export const LoginPage: React.FC = () => {
             disabled={loading}
             className="w-full h-14 bg-white hover:bg-neutral-100 text-black font-extrabold text-sm rounded-full transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer mt-2 disabled:opacity-50"
           >
-            <span>{loading ? 'Ingresando...' : 'Iniciar Sesión'}</span>
+            <span>
+              {loading
+                ? 'Procesando...'
+                : mode === 'login'
+                ? 'Iniciar Sesión'
+                : 'Crear Cuenta de Cajero'}
+            </span>
             <ArrowRight className="w-4 h-4 stroke-[3]" />
           </button>
         </form>
@@ -135,9 +202,9 @@ export const LoginPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => handleQuickLogin('cajero@elbuenvecino.com', 'cajero123')}
+              onClick={() => handleQuickLogin('cajero1@elbuenvecino.com', 'cajero123')}
               className={`p-3 rounded-tile text-left transition-all bg-[#1C1C1F] border ${
-                email === 'cajero@elbuenvecino.com'
+                email === 'cajero1@elbuenvecino.com'
                   ? 'border-[#34D399] shadow-[0_0_15px_rgba(52,211,153,0.25)]'
                   : 'border-white/[0.06] hover:border-white/20'
               }`}

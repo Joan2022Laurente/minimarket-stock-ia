@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Search, Eye, Printer, X, Receipt } from 'lucide-react';
+import { Search, Eye, Printer, X, Receipt, Calendar, CloudUpload } from 'lucide-react';
 import { ventaService } from '../../services/api';
 import { VentaListItem, VentaTicketDetail } from '../../types/venta';
 
@@ -8,15 +8,23 @@ export const HistorialVentasPage: React.FC = () => {
   const [selectedTicket, setSelectedTicket] = useState<VentaTicketDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  const [s3Msg, setS3Msg] = useState<string | null>(null);
 
   useEffect(() => {
     loadVentas();
-  }, []);
+  }, [fechaInicio, fechaFin]);
 
   const loadVentas = async () => {
     setLoading(true);
     try {
-      const data = await ventaService.list(50, 0);
+      const data = await ventaService.list(
+        50,
+        0,
+        fechaInicio || undefined,
+        fechaFin || undefined
+      );
       setVentas(data);
     } catch (err) {
       console.error('Error cargando historial de ventas:', err);
@@ -26,11 +34,21 @@ export const HistorialVentasPage: React.FC = () => {
   };
 
   const handleVerDetalle = async (id: number) => {
+    setS3Msg(null);
     try {
       const ticket = await ventaService.getTicket(id);
       setSelectedTicket(ticket);
     } catch (err) {
       console.error('Error obteniendo detalle del ticket:', err);
+    }
+  };
+
+  const handleBackupS3 = async (id: number) => {
+    try {
+      const res = await ventaService.backupReceiptS3(id);
+      setS3Msg(`Comprobante respaldado (${res.storage}): ${res.s3_key}`);
+    } catch {
+      setS3Msg('No se pudo respaldar el comprobante en S3.');
     }
   };
 
@@ -43,7 +61,7 @@ export const HistorialVentasPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Cabecera FinPoint Card */}
-      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-7 shadow-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-[#141416] rounded-card border border-white/[0.08] p-7 shadow-card flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
             <Receipt className="w-5 h-5 text-[#FF4A15]" />
@@ -52,15 +70,48 @@ export const HistorialVentasPage: React.FC = () => {
           <p className="text-xs text-[#8E8E93] mt-0.5">Tickets emitidos en caja y desglose tributario</p>
         </div>
 
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 text-[#8E8E93] absolute left-3.5 top-3" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por ticket o cajero..."
-            className="w-full h-10 pl-10 pr-4 bg-[#1C1C1F] border border-white/[0.08] rounded-full text-xs text-white placeholder-[#5C5C62] focus:outline-none focus:border-white/20"
-          />
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          <div className="flex items-center gap-2 bg-[#1C1C1F] border border-white/[0.08] rounded-full px-3 h-10">
+            <Calendar className="w-3.5 h-3.5 text-[#8E8E93]" />
+            <input
+              type="date"
+              aria-label="Fecha inicio"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="bg-transparent text-xs text-white focus:outline-none [color-scheme:dark]"
+            />
+            <span className="text-[#5C5C62] text-xs">-</span>
+            <input
+              type="date"
+              aria-label="Fecha fin"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              className="bg-transparent text-xs text-white focus:outline-none [color-scheme:dark]"
+            />
+            {(fechaInicio || fechaFin) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFechaInicio('');
+                  setFechaFin('');
+                }}
+                className="text-[11px] text-[#FF4A15] font-bold hover:underline pl-1"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+
+          <div className="relative flex-1 sm:w-64">
+            <Search className="w-4 h-4 text-[#8E8E93] absolute left-3.5 top-3" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por ticket o cajero..."
+              className="w-full h-10 pl-10 pr-4 bg-[#1C1C1F] border border-white/[0.08] rounded-full text-xs text-white placeholder-[#5C5C62] focus:outline-none focus:border-white/20"
+            />
+          </div>
         </div>
       </div>
 
@@ -187,11 +238,25 @@ export const HistorialVentasPage: React.FC = () => {
               </div>
             </div>
 
+            {s3Msg && (
+              <div className="mt-3 p-2.5 rounded-xl bg-[#1C1C1F] border border-[#34D399]/30 text-[11px] text-[#34D399] font-mono text-center">
+                {s3Msg}
+              </div>
+            )}
+
             <div className="flex gap-2.5 pt-4">
               <button
                 type="button"
+                onClick={() => handleBackupS3(selectedTicket.id)}
+                className="h-12 px-4 rounded-full bg-[#1C1C1F] border border-white/[0.08] text-xs font-bold text-white flex items-center justify-center gap-1.5 hover:border-white/30"
+              >
+                <CloudUpload className="w-4 h-4 text-[#FF4A15]" />
+                <span>S3</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => window.print()}
-                className="flex-1 h-12 rounded-full bg-[#1C1C1F] border border-white/[0.08] text-xs font-bold text-white flex items-center justify-center gap-2"
+                className="flex-1 h-12 rounded-full bg-[#1C1C1F] border border-white/[0.08] text-xs font-bold text-white flex items-center justify-center gap-2 hover:border-white/30"
               >
                 <Printer className="w-4 h-4" />
                 <span>Imprimir</span>

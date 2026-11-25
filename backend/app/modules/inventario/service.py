@@ -2,6 +2,7 @@
 backend/app/modules/inventario/service.py
 Lógica de auditoría de inventario, semáforos de stock y ajustes de kardex.
 """
+import time
 from typing import List, Optional, Dict, Any
 from fastapi import HTTPException, status
 from app.core.database import db_manager
@@ -38,16 +39,22 @@ class InventarioService:
         # Fallback en memoria
         res = []
         for p in db_manager._in_memory_data["productos"]:
+            if not p.get("activo", True):
+                continue
             stock = p.get("stock_actual", 0)
             s_min = p.get("stock_minimo", 5)
             s_seg = p.get("stock_seguridad", 10)
             estado = "critico" if stock <= s_min else ("bajo" if stock <= s_seg else "optimo")
+            cat = next(
+                (c for c in db_manager._in_memory_data["categorias"] if c["id"] == p.get("categoria_id")),
+                None,
+            )
             res.append({
                 "id": p["id"],
                 "codigo_barras": p["codigo_barras"],
                 "nombre": p["nombre"],
                 "categoria_id": p["categoria_id"],
-                "categoria_nombre": "Abarrotes",
+                "categoria_nombre": cat["nombre"] if cat else "Abarrotes",
                 "stock_actual": stock,
                 "stock_minimo": s_min,
                 "stock_seguridad": s_seg,
@@ -112,12 +119,29 @@ class InventarioService:
         if not prod:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado")
         stock_previo = prod["stock_actual"]
-        prod["stock_actual"] += ajuste_in.cantidad
+        nuevo_stock = stock_previo + ajuste_in.cantidad
+        if nuevo_stock < 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El ajuste dejaría el stock en negativo ({nuevo_stock}). Operación cancelada."
+            )
+        prod["stock_actual"] = nuevo_stock
+        db_manager._in_memory_data["movimientos_inventario"].append({
+            "id": len(db_manager._in_memory_data["movimientos_inventario"]) + 1,
+            "producto_id": ajuste_in.producto_id,
+            "producto_nombre": prod["nombre"],
+            "tipo": ajuste_in.tipo,
+            "cantidad": ajuste_in.cantidad,
+            "stock_previo": stock_previo,
+            "stock_posterior": nuevo_stock,
+            "motivo": ajuste_in.motivo,
+            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        })
         return {
             "success": True,
             "producto_id": ajuste_in.producto_id,
             "stock_previo": stock_previo,
-            "nuevo_stock": prod["stock_actual"],
+            "nuevo_stock": nuevo_stock,
             "motivo": ajuste_in.motivo
         }
 
@@ -141,7 +165,10 @@ class InventarioService:
                     return [dict(r) for r in cur.fetchall()]
             finally:
                 conn.close()
-        return []
+        movs = list(reversed(db_manager._in_memory_data["movimientos_inventario"]))
+        if producto_id is not None:
+            movs = [m for m in movs if m.get("producto_id") == producto_id]
+        return movs[:limit]
 
 
 inventario_service = InventarioService()

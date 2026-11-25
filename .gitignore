@@ -44,6 +44,7 @@ htmlcov/
 *.onnx
 backend/app/ml/artifacts/*
 !backend/app/ml/artifacts/.gitkeep
+backend/uploads/
 data/*.csv
 data/*.parquet
 

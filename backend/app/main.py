@@ -7,8 +7,10 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.metrics import PrometheusMiddleware, get_metrics_response
+from app.core.s3 import LOCAL_UPLOADS_DIR
 from app.modules.auth.router import router as auth_router
 from app.modules.productos.router import router as productos_router
 from app.modules.ventas.router import router as ventas_router
@@ -52,6 +54,9 @@ app.include_router(productos_router, prefix=settings.API_V1_STR)
 app.include_router(ventas_router, prefix=settings.API_V1_STR)
 app.include_router(inventario_router, prefix=settings.API_V1_STR)
 app.include_router(predicciones_router, prefix=settings.API_V1_STR)
+
+LOCAL_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(LOCAL_UPLOADS_DIR)), name="uploads")
 
 
 # 4. Endpoints de Infraestructura y Observabilidad

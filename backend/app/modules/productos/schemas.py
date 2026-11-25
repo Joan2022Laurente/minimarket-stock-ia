@@ -7,6 +7,12 @@ from decimal import Decimal
 from pydantic import BaseModel, Field, ConfigDict
 
 
+class CategoriaCreate(BaseModel):
+    nombre: str = Field(..., min_length=2, max_length=80)
+    descripcion: Optional[str] = None
+    icono: Optional[str] = "Package"
+
+
 class CategoriaResponse(BaseModel):
     id: int
     nombre: str
@@ -25,6 +31,7 @@ class ProductoBase(BaseModel):
     stock_actual: int = Field(default=0, ge=0)
     stock_minimo: int = Field(default=5, ge=0)
     stock_seguridad: int = Field(default=10, ge=0)
+    imagen_url: Optional[str] = None
     activo: bool = True
 
 
@@ -33,6 +40,7 @@ class ProductoCreate(ProductoBase):
 
 
 class ProductoUpdate(BaseModel):
+    codigo_barras: Optional[str] = None
     nombre: Optional[str] = None
     categoria_id: Optional[int] = None
     proveedor_id: Optional[int] = None
@@ -40,6 +48,7 @@ class ProductoUpdate(BaseModel):
     precio_venta: Optional[Decimal] = None
     stock_minimo: Optional[int] = None
     stock_seguridad: Optional[int] = None
+    imagen_url: Optional[str] = None
     activo: Optional[bool] = None
 
 

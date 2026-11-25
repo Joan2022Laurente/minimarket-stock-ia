@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { DollarSign, Smartphone, CreditCard, X, Printer, CheckCircle2 } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { DollarSign, Smartphone, CreditCard, X, Printer, CheckCircle2, CloudUpload } from 'lucide-react';
 import { ventaService } from '../../services/api';
 import { useCartStore } from '../../stores/useCartStore';
 import { VentaResponse } from '../../types/venta';
@@ -7,20 +7,33 @@ import { VentaResponse } from '../../types/venta';
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSaleSuccess?: () => void;
 }
 
-export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) => {
+export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSaleSuccess }) => {
   const { items, getTotal, clearCart } = useCartStore();
   const [metodo, setMetodo] = useState<'efectivo' | 'yape_plin' | 'tarjeta'>('efectivo');
-  const [montoPagado, setMontoPagado] = useState<number>(getTotal());
+  const [montoPagado, setMontoPagado] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ticketVenta, setTicketVenta] = useState<VentaResponse | null>(null);
   const [ticketItems, setTicketItems] = useState<{ nombre: string; cantidad: number; subtotal: number }[]>([]);
+  const [s3Status, setS3Status] = useState<string | null>(null);
+  const [backingUpS3, setBackingUpS3] = useState(false);
+
+  const total = getTotal();
+
+  useEffect(() => {
+    if (isOpen && !ticketVenta) {
+      setMetodo('efectivo');
+      setMontoPagado(total);
+      setError(null);
+      setS3Status(null);
+    }
+  }, [isOpen, total, ticketVenta]);
 
   if (!isOpen) return null;
 
-  const total = getTotal();
   const vuelto = metodo === 'efectivo' ? Math.max(0, Number((montoPagado - total).toFixed(2))) : 0;
   const saldoInsuficiente = metodo === 'efectivo' && montoPagado < total;
 
@@ -54,6 +67,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
       setTicketItems(cachedTicketItems);
       setTicketVenta(res);
       clearCart();
+      onSaleSuccess?.();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Error al procesar la venta en caja.');
     } finally {
@@ -61,8 +75,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
     }
   };
 
+  const handleBackupS3 = async () => {
+    if (!ticketVenta) return;
+    setBackingUpS3(true);
+    try {
+      const res = await ventaService.backupReceiptS3(ticketVenta.venta_id);
+      setS3Status(`Respaldado (${res.storage}): ${res.s3_key}`);
+    } catch {
+      setS3Status('No se pudo respaldar el comprobante.');
+    } finally {
+      setBackingUpS3(false);
+    }
+  };
+
   const handleCerrarTodo = () => {
     setTicketVenta(null);
+    setS3Status(null);
     onClose();
   };
 
@@ -228,11 +256,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
             </div>
           </div>
         ) : (
-          /* Ticket Emitido en Papel Blanco */
+          /* Pop-up de Venta Realizada con Éxito */
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-[#34D399] font-bold text-xs">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Transacción Atómica Registrada</span>
+            <div className="p-4 rounded-tile bg-[#34D399]/15 border border-[#34D399]/30 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#34D399] text-black flex items-center justify-center shrink-0 shadow-md">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="font-extrabold text-sm text-[#34D399]">
+                  ¡Venta realizada con éxito!
+                </p>
+                <p className="text-[11px] text-[#8E8E93] mt-0.5">
+                  Ticket {ticketVenta.numero_ticket} · Stock actualizado atómicamente
+                </p>
+              </div>
             </div>
 
             <div className="bg-white text-slate-900 rounded-tile p-5 font-mono text-xs space-y-2 shadow-inner">
@@ -247,22 +284,45 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                     <span className="truncate max-w-[180px]">
                       {it.cantidad}x {it.nombre}
                     </span>
-                    <span className="font-bold">S/ {it.subtotal.toFixed(2)}</span>
+                    <span className="font-bold">S/ {Number(it.subtotal).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="pt-1 flex justify-between font-bold text-sm">
-                <span>TOTAL:</span>
-                <span>S/ {ticketVenta.total.toFixed(2)}</span>
+              <div className="pt-1 space-y-0.5 text-xs">
+                <div className="flex justify-between font-bold text-sm">
+                  <span>TOTAL:</span>
+                  <span>S/ {Number(ticketVenta.total).toFixed(2)}</span>
+                </div>
+                {Number(ticketVenta.vuelto ?? 0) > 0 && (
+                  <div className="flex justify-between text-emerald-700 font-bold text-xs">
+                    <span>VUELTO:</span>
+                    <span>S/ {Number(ticketVenta.vuelto).toFixed(2)}</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex gap-3 pt-2">
+            {s3Status && (
+              <div className="p-2.5 rounded-xl bg-[#1C1C1F] border border-[#34D399]/30 text-[11px] text-[#34D399] font-mono text-center">
+                {s3Status}
+              </div>
+            )}
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={handleBackupS3}
+                disabled={backingUpS3}
+                className="h-12 px-4 rounded-full bg-[#1C1C1F] border border-white/[0.08] text-xs font-bold text-white flex items-center justify-center gap-1.5 hover:border-white/30 disabled:opacity-50"
+              >
+                <CloudUpload className="w-4 h-4 text-[#FF4A15]" />
+                <span>{backingUpS3 ? 'Subiendo...' : 'S3'}</span>
+              </button>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="flex-1 h-12 rounded-full bg-[#1C1C1F] border border-white/[0.08] text-xs font-bold text-white flex items-center justify-center gap-2"
+                className="flex-1 h-12 rounded-full bg-[#1C1C1F] border border-white/[0.08] text-xs font-bold text-white flex items-center justify-center gap-2 hover:border-white/30"
               >
                 <Printer className="w-4 h-4" />
                 <span>Imprimir</span>
@@ -270,7 +330,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
               <button
                 type="button"
                 onClick={handleCerrarTodo}
-                className="flex-1 h-12 rounded-full bg-white text-black text-xs font-extrabold shadow-lg"
+                className="flex-1 h-12 rounded-full bg-white text-black text-xs font-extrabold shadow-lg hover:bg-neutral-100"
               >
                 Nueva Venta
               </button>

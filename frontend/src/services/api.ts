@@ -34,6 +34,10 @@ export const authService = {
     const res = await api.post('/auth/login', { email, password });
     return res.data;
   },
+  register: async (nombre: string, email: string, password: string) => {
+    const res = await api.post('/auth/register', { nombre, email, password, rol: 'cajero' });
+    return res.data;
+  },
   getMe: async () => {
     const res = await api.get('/auth/me');
     return res.data;
@@ -56,6 +60,26 @@ export const productoService = {
     const res = await api.get('/productos/categorias');
     return res.data;
   },
+  create: async (payload: any) => {
+    const res = await api.post('/productos', payload);
+    return res.data;
+  },
+  update: async (id: number, payload: any) => {
+    const res = await api.put(`/productos/${id}`, payload);
+    return res.data;
+  },
+  remove: async (id: number) => {
+    const res = await api.delete(`/productos/${id}`);
+    return res.data;
+  },
+  uploadImage: async (id: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.post(`/productos/${id}/imagen`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
 };
 
 export const ventaService = {
@@ -63,12 +87,19 @@ export const ventaService = {
     const res = await api.post('/ventas', payload);
     return res.data;
   },
-  list: async (limit: number = 50, offset: number = 0) => {
-    const res = await api.get('/ventas', { params: { limit, offset } });
+  list: async (limit: number = 50, offset: number = 0, fechaInicio?: string, fechaFin?: string) => {
+    const params: Record<string, any> = { limit, offset };
+    if (fechaInicio) params.fecha_inicio = fechaInicio;
+    if (fechaFin) params.fecha_fin = fechaFin;
+    const res = await api.get('/ventas', { params });
     return res.data;
   },
   getTicket: async (id: number) => {
     const res = await api.get(`/ventas/${id}`);
+    return res.data;
+  },
+  backupReceiptS3: async (id: number) => {
+    const res = await api.post(`/ventas/${id}/comprobante-s3`);
     return res.data;
   },
 };

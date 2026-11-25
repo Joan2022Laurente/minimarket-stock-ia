@@ -4,11 +4,38 @@ Autenticación y autorización basada en JWT, roles y hashing de contraseñas.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
+import hashlib
+import hmac
+import secrets
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from app.core.config import settings
+
+
+def hash_password(password: str) -> str:
+    """Genera un hash seguro PBKDF2-HMAC-SHA256 con salt aleatorio por usuario."""
+    salt = secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 120_000)
+    return f"pbkdf2_sha256$120000${salt}${dk.hex()}"
+
+
+def verify_password(plain_password: str, stored_hash: str) -> bool:
+    """Verifica una contraseña en texto plano contra su hash PBKDF2 en tiempo constante."""
+    try:
+        algo, iter_str, salt, hash_hex = stored_hash.split("$", 3)
+        if algo != "pbkdf2_sha256":
+            return False
+        dk = hashlib.pbkdf2_hmac(
+            "sha256",
+            plain_password.encode("utf-8"),
+            salt.encode("utf-8"),
+            int(iter_str),
+        )
+        return hmac.compare_digest(dk.hex(), hash_hex)
+    except (ValueError, TypeError):
+        return False
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/auth/token",

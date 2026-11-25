@@ -19,5 +19,6 @@ export interface Producto {
   stock_actual: number;
   stock_minimo: number;
   stock_seguridad: number;
+  imagen_url?: string;
   activo: boolean;
 }
