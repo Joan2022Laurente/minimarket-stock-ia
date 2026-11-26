@@ -11,13 +11,17 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+from datetime import UTC, datetime
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request
 from uuid import uuid4
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from release import (  # noqa: E402
-    ARCH, HTTP, OWNER_LABEL, PROJECT, ROOT, VOLUMES, Lab, atomic_json,
+    ARCH, HTTP, LAB_PROJECTS, OWNER_LABEL, PROJECT, ROOT, VOLUMES, Lab, atomic_json,
     configuration_digest, digest_bytes, digest_file, exclusive_lock, overlay, require_local_engine, snapshot_files,
 )
 
@@ -123,11 +127,61 @@ def check(condition, message):
     print(f"PASS {message}", flush=True)
 
 
-def lifecycle(root, cfg, registry_name):
-    lab = Lab(root, 90)
+def measure(operation, action):
+    """Mide desde el cliente del host, independiente del stack observado."""
+    samples = []
+    done = threading.Event()
+    ready = threading.Event()
+    start = time.monotonic()
+
+    def sample():
+        mark = datetime.now(UTC).isoformat(timespec="milliseconds")
+        tick = time.monotonic()
+        row = {"utc": mark, "elapsed_s": round(tick - start, 3)}
+        for key, path, expected in (("spa", "/", b'id="root"'), ("health", "/health", b"fixture")):
+            began = time.monotonic()
+            status, functional = 0, False
+            try:
+                probe = Request("http://127.0.0.1:8080" + path, headers={"Host": "localhost:8080"})
+                with HTTP.open(probe, timeout=0.4) as response:
+                    status = response.status
+                    functional = status == 200 and expected in response.read(8192)
+            except HTTPError as error:
+                status = error.code
+                error.close()
+            except (OSError, URLError):
+                pass
+            row[key] = {"http": status, "ok": functional, "ms": round(1000 * (time.monotonic() - began), 2)}
+        row["ok"] = row["spa"]["ok"] and row["health"]["ok"]
+        samples.append(row)
+        return tick
+
+    def collect():
+        while not done.is_set():
+            tick = sample()
+            ready.set()
+            done.wait(max(0, 1 - (time.monotonic() - tick)))
+
+    observer = threading.Thread(target=collect, daemon=True)
+    observer.start()
+    try:
+        check(ready.wait(5) and samples[0]["ok"], "línea base de disponibilidad desde el host")
+        begin = time.monotonic()
+        action()
+        operation_seconds = round(time.monotonic() - begin, 3)
+    finally:
+        done.set()
+        observer.join(timeout=3)
+    sample()
+    check(samples[-1]["ok"], "recuperación funcional desde el host")
+    return {"operation": operation, "operation_seconds": operation_seconds, "samples": samples}
+
+
+def lifecycle(root, cfg, registry_name, project=PROJECT, availability=None):
+    lab = Lab(root, 90, project)
     lab.preflight()
     base = (sys.executable, "-B", str(ROOT / "deploy/scripts/release.py"))
-    common = ("--environment", "laboratory", "--root", str(root))
+    common = ("--environment", "laboratory", "--root", str(root), "--project", project)
     releases = {}
 
     def deploy_args(release_id, *args):
@@ -144,7 +198,10 @@ def lifecycle(root, cfg, registry_name):
         return result
 
     pairs = {}
-    for release_id, mode in (("release-a", "ok"), ("release-b", "ok"), ("unready", "unready"), ("unhealthy", "unhealthy"), ("slow", "slow")):
+    cases = [("release-a", "ok"), ("release-b", "ok")]
+    if availability is None:
+        cases.extend((("unready", "unready"), ("unhealthy", "unhealthy"), ("slow", "slow")))
+    for release_id, mode in cases:
         pairs[release_id] = fixture_images(root, cfg, registry_name, release_id, mode)
         releases[release_id] = manifest(root, cfg, release_id, pairs[release_id])
         print(f"OCI {release_id} " + json.dumps({key: ref.split("@")[1] for key, ref in pairs[release_id].items()}), flush=True)
@@ -163,8 +220,18 @@ def lifecycle(root, cfg, registry_name):
     a = lab.load(lab.state()["current"])
     lab.compose(a, "exec", "-T", "backend", "python", "-c",
                 f"from pathlib import Path; Path({marker!r}).write_text('init008')", stage="escritura fixture")
-    names = sorted(f"{PROJECT}_{volume}" for volume in VOLUMES)
+    names = sorted(f"{project}_{volume}" for volume in VOLUMES)
     creation = docker("volume", "inspect", "--format", "{{.Name}} {{.CreatedAt}}", *names)
+    if availability is not None:
+        update = measure("A-to-B", lambda: deploy("release-b", "--apply"))
+        check(lab.state()["current"]["id"] == "release-b", "B confirmada")
+        restore = measure("B-to-A", lambda: rollback("--apply"))
+        check(lab.state()["current"]["id"] == "release-a" and lab.state()["previous"]["id"] == "release-b", "A confirmada")
+        marker_value = lab.compose(a, "exec", "-T", "backend", "cat", marker, stage="verificación fixture")
+        check(marker_value == "init008" and creation == docker("volume", "inspect", "--format", "{{.Name}} {{.CreatedAt}}", *names),
+              "marcador ML y cinco volúmenes conservados")
+        atomic_json(availability, {"interval_seconds": 1, "project": project, "transitions": [update, restore]})
+        return
     deploy("release-b", "--apply")
     stable = lab.state()
     check(stable["current"]["id"] == "release-b" and stable["previous"]["id"] == "release-a", "actualización B y conservación de A")
@@ -218,10 +285,12 @@ def main():
     roots = parser.add_mutually_exclusive_group()
     roots.add_argument("--root", type=Path, help="Directorio absoluto vacío y privado; se conserva para evidencia")
     roots.add_argument("--resume-initial", type=Path, help="Reutilizar únicamente un laboratorio previo sin versión confirmada")
+    parser.add_argument("--project", choices=LAB_PROJECTS, default=PROJECT)
+    parser.add_argument("--measure-availability", type=Path, help="Solo A, B y rollback, con sondeo desde el host")
     args = parser.parse_args()
-    root = (args.resume_initial or args.root or Path(tempfile.mkdtemp(prefix="buenvecino-init008-"))).resolve()
+    root = (args.resume_initial or args.root or Path(tempfile.mkdtemp(prefix=args.project + "-"))).resolve()
     if args.resume_initial:
-        existing = Lab(root, 90)
+        existing = Lab(root, 90, args.project)
         if any(existing.state().values()):
             parser.error("El laboratorio ya tiene versión confirmada o una transición pendiente")
         owner = existing.lab["owner"]
@@ -231,23 +300,30 @@ def main():
             parser.error("Use un directorio temporal vacío fuera del repositorio")
         owner = uuid4().hex
         address = f"127.0.0.1:{49152 + secrets.randbelow(10000)}"
-    name = f"{PROJECT}-registry-{owner[:8]}"
+    name = f"{args.project}-registry-{owner[:8]}"
     print(f"LAB {root}", flush=True)
     require_local_engine(docker("context", "inspect", "--format", "{{.Endpoints.docker.Host}}"), os.environ)
     docker("run", "-d", "--rm", "--name", name, "--label", f"{OWNER_LABEL}={owner}", "--network", "host",
            "-e", f"REGISTRY_HTTP_ADDR={address}", "--tmpfs", "/var/lib/registry", REGISTRY)
     try:
-        docker("exec", name, "wget", "-qO-", f"http://{address}/v2/")
+        for attempt in range(12):
+            try:
+                docker("exec", name, "wget", "-qO-", f"http://{address}/v2/")
+                break
+            except RuntimeError:
+                if attempt == 11:
+                    raise
+                time.sleep(0.5)
         cfg = {"owner": owner, "registry": address, "architecture": f"linux/{ARCH[platform.machine().lower()]}", "schema": "fixture-v1"}
         if not args.resume_initial:
             atomic_json(root / "lab.json", cfg)
             with os.fdopen(os.open(root / "lab.env", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as stream:
                 stream.write(f"SECRET_KEY=fixture-{uuid4().hex}\nGRAFANA_ADMIN_PASSWORD=fixture-{uuid4().hex}\n")
             (root / "textfile").mkdir()
-        lifecycle(root, cfg, name)
+        lifecycle(root, cfg, name, args.project, args.measure_availability)
     finally:
         containers = docker("ps", "-q", "--filter", f"label={OWNER_LABEL}={owner}",
-                            "--filter", f"label=com.docker.compose.project={PROJECT}")
+                            "--filter", f"label=com.docker.compose.project={args.project}")
         if containers:
             docker("stop", *containers.splitlines())
         docker("stop", name)

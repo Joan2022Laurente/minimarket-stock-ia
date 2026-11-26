@@ -1,9 +1,0 @@
-{"utc": "2026-11-26T18:01:14Z", "event": "initial-failure-stopped", "release": "release-a", "seconds": 36.583}
-{"utc": "2026-11-26T18:04:14Z", "event": "deployed", "release": "release-a", "seconds": 37.734}
-{"utc": "2026-11-26T18:04:54Z", "event": "deployed", "release": "release-b", "seconds": 39.841}
-{"utc": "2026-11-26T18:05:01Z", "event": "already-current", "release": "release-b", "seconds": 4.599}
-{"utc": "2026-11-26T18:06:25Z", "event": "auto-recovered", "release": "unready", "seconds": 75.637}
-{"utc": "2026-11-26T18:07:40Z", "event": "auto-recovered", "release": "unhealthy", "seconds": 74.076}
-{"utc": "2026-11-26T18:09:01Z", "event": "auto-recovered", "release": "slow", "seconds": 80.966}
-{"utc": "2026-11-26T18:10:19Z", "event": "recovered-interruption", "release": "release-b", "seconds": 38.494}
-{"utc": "2026-11-26T18:11:03Z", "event": "rolled-back", "release": "release-a", "seconds": 43.32}

@@ -38,12 +38,24 @@ try {
     return responses.map((response) => response.status);
   });
   assert.deepEqual(routeStatus, [401, 404, 404]);
+  const cachedPaths = await anonymous.evaluate(async () => {
+    const entries = await Promise.all((await caches.keys()).map(async (name) => (await caches.open(name)).keys()));
+    return entries.flat().map((request) => new URL(request.url).pathname);
+  });
+  assert.ok(cachedPaths.some((path) => path.startsWith("/assets/")), "El SW precarga los assets de Vite");
+  assert.ok(cachedPaths.every((path) => !/^\/(api|uploads|metrics)(\/|$)/.test(path)), "Cache Storage excluye rutas privadas");
   await pwa.setOffline(true);
   const cachedPrivate = await anonymous.evaluate(async () =>
     fetch("/api/v1/productos").then(() => true, () => false),
   );
   assert.equal(cachedPrivate, false);
-  console.log("PASS PWA: service worker activo, endpoints privados protegidos y API ausente offline");
+  const offlineSale = await anonymous.evaluate(async () =>
+    fetch("/api/v1/ventas", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+    }).then(() => true, () => false),
+  );
+  assert.equal(offlineSale, false);
+  console.log("PASS PWA: assets precargados, rutas privadas fuera de caché y POST de venta bloqueado offline");
   await pwa.close();
 } finally {
   await browser.close();

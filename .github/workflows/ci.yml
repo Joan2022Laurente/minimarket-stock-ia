@@ -47,7 +47,9 @@ jobs:
           {
             docker run --rm --network none -v "$PWD:/work:ro" -w /work \
               rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
-            shellcheck -x deploy/scripts/{setup,start,stop,healthcheck,backup,restore,caddy-production}.sh deploy/tests/*.sh
+            shellcheck -x deploy/scripts/{setup,start,stop,healthcheck,backup,restore,caddy-production,deploy,rollback,ec2-preflight}.sh deploy/tests/*.sh
+            python3 -B -m unittest discover -s deploy/tests -p 'test_*.py'
+            node --input-type=module --check < deploy/tests/performance/concurrent-users.js
             bash deploy/tests/ci-stack.sh static "$RUNNER_TEMP" "buenvecino-ci-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           } 2>&1 | tee "$RUNNER_TEMP/reports/infrastructure.txt"
       - name: Guardar evidencia de infraestructura

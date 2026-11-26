@@ -28,6 +28,7 @@ probe_module = importlib.util.module_from_spec(probe_spec)
 probe_spec.loader.exec_module(probe_module)
 
 PROJECT = "buenvecino-init008"
+LAB_PROJECTS = (PROJECT, "buenvecino-init009-release")
 OWNER_LABEL = "com.buenvecino.init008.lab"
 SERVICES = {"backend", "frontend", "caddy", "prometheus", "grafana", "node-exporter", "cadvisor"}
 VOLUMES = {"ml_artifacts", "prometheus_data", "grafana_data", "caddy_data", "caddy_config"}
@@ -170,7 +171,9 @@ def http_status(port: int, path: str) -> int:
 
 
 class Lab:
-    def __init__(self, root: Path, timeout: int):
+    def __init__(self, root: Path, timeout: int, project: str = PROJECT):
+        require(project in LAB_PROJECTS, "Proyecto de laboratorio fuera del alcance")
+        self.project = project
         require(root.is_absolute() and root.is_dir() and path_is_direct(root)
                 and not root.is_relative_to(ROOT.resolve()), "Use una raíz absoluta de fixtures fuera del checkout")
         if os.name != "nt":
@@ -225,14 +228,14 @@ class Lab:
         resources = json.loads(self.docker("info", "--format", "{{json .}}", stage="capacidad Docker"))
         require(resources["NCPU"] >= 1 and resources["MemTotal"] >= 2 * 1024**3
                 and shutil.disk_usage(self.root).free >= 256 * 1024**2, "Capacidad insuficiente para el fixture", 3)
-        names = self.docker("ps", "-aq", "--filter", f"label=com.docker.compose.project={PROJECT}", stage="proyecto Compose")
+        names = self.docker("ps", "-aq", "--filter", f"label=com.docker.compose.project={self.project}", stage="proyecto Compose")
         if names:
             format_string = '{{index .Config.Labels "' + OWNER_LABEL + '"}}'
             owners = self.docker("inspect", "--format", format_string, *names.splitlines(), stage="propiedad de contenedores")
             require(set(owners.splitlines()) == {self.lab["owner"]}, "Proyecto existente de otro laboratorio", 3)
         for kind, expected in (("volume", VOLUMES), ("network", {"red-web", "red-monitoreo"})):
             names = self.docker(kind, "ls", "--format", "{{.Name}}", stage=f"inventario {kind}")
-            owned_names = sorted(set(names.splitlines()) & {f"{PROJECT}_{name}" for name in expected})
+            owned_names = sorted(set(names.splitlines()) & {f"{self.project}_{name}" for name in expected})
             if owned_names:
                 format_string = '{{index .Labels "' + OWNER_LABEL + '"}}'
                 owners = self.docker(kind, "inspect", "--format", format_string, *owned_names, stage=f"propiedad {kind}")
@@ -286,7 +289,7 @@ class Lab:
 
     def compose(self, doc: dict, *args: str, stage: str, timeout: int = 15) -> str:
         config = self.root / "releases" / doc["id"] / "deploy"
-        return self.docker("compose", "--project-name", PROJECT, "--env-file", str(self.root / "lab.env"),
+        return self.docker("compose", "--project-name", self.project, "--env-file", str(self.root / "lab.env"),
                            "-f", str(config / "docker-compose.yml"), "-f", str(config / "docker-compose.dev.yml"),
                            "-f", str(config / "fixture-owner.json"), *args, stage=stage, timeout=timeout,
                            env={**self.env, **{f"{part.upper()}_IMAGE": doc["images"][part] for part in COMPONENTS}})
@@ -424,6 +427,7 @@ def main() -> int:
     parser.add_argument("operation", choices=("deploy", "rollback"))
     parser.add_argument("--environment", required=True, choices=("laboratory", "ec2-lab", "production"))
     parser.add_argument("--root", type=Path)
+    parser.add_argument("--project", choices=LAB_PROJECTS, default=PROJECT)
     execution = parser.add_mutually_exclusive_group()
     execution.add_argument("--apply", action="store_true")
     execution.add_argument("--dry-run", action="store_true")
@@ -440,7 +444,7 @@ def main() -> int:
                     "deploy requiere un release y --approve-sha256 válidos")
         else:
             require(args.release is None and args.approve_sha256 is None, "rollback usa los punteros confirmados")
-        lab = Lab(args.root, args.timeout)
+        lab = Lab(args.root, args.timeout, args.project)
         if args.apply:
             with exclusive_lock(lab.root / "release.lock"):
                 lab.operate(args)
