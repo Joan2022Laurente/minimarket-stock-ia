@@ -1,12 +1,15 @@
 """
 backend/app/core/metrics.py
-Instrumentación de métricas de observabilidad para Prometheus (ALT-01 a ALT-06).
+Instrumentación de métricas de observabilidad para Prometheus.
 """
 import time
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
+from app.core.config import settings
+
+STANDARD_HTTP_METHODS = frozenset({"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE", "CONNECT"})
 
 # 1. Métricas de Tráfico HTTP
 HTTP_REQUESTS_TOTAL = Counter(
@@ -22,12 +25,20 @@ HTTP_REQUEST_DURATION_SECONDS = Histogram(
     buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0]
 )
 
+# Permite que ALT-05 mida el primer lote si Prometheus ya hizo un scrape.
+HTTP_REQUEST_DURATION_SECONDS.labels(method="POST", endpoint=f"{settings.API_V1_STR}/ventas")
+
 # 2. Métricas de Negocio (Punto de Venta)
 SALES_REGISTERED_TOTAL = Counter(
     "sales_registered_total",
     "Número total de ventas completadas con éxito",
     ["metodo_pago"]
 )
+
+# Registrar los métodos de pago válidos antes de la primera venta para que
+# Prometheus pueda observar el primer incremento de cada serie.
+for payment_method in ("efectivo", "tarjeta", "yape_plin"):
+    SALES_REGISTERED_TOTAL.labels(metodo_pago=payment_method)
 
 SALES_REVENUE_SOLES_TOTAL = Counter(
     "sales_revenue_soles_total",
@@ -60,8 +71,8 @@ BACKUP_LAST_SUCCESS_TIMESTAMP = Gauge(
 
 class PrometheusMiddleware(BaseHTTPMiddleware):
     """Middleware para medir latencia y volumen de peticiones HTTP automáticamente."""
-    async def dispatch(self, request: Request, call_next):
-        if request.url.path in ["/metrics", "/health"]:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        if request.url.path in {"/metrics", "/health", "/ready"}:
             return await call_next(request)
 
         start_time = time.perf_counter()
@@ -70,25 +81,26 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             status_code = response.status_code
             return response
-        except Exception:
-            raise
         finally:
             duration = time.perf_counter() - start_time
-            endpoint = request.url.path
-            # Normalizar endpoints con IDs numéricos para evitar explosión de cardinalidad
-            parts = endpoint.split("/")
-            normalized_parts = [p if not p.isdigit() else "{id}" for p in parts]
-            normalized_endpoint = "/".join(normalized_parts) or "/"
+            route = request.scope.get("route")
+            template = getattr(route, "path_format", None)
+            api_prefix = f"{settings.API_V1_STR}/"
+            # FastAPI can expose the template relative to the included router.
+            if template and request.url.path.startswith(api_prefix) and not template.startswith(api_prefix):
+                template = settings.API_V1_STR + template
+            endpoint = template or "unmatched"
+            method = request.method if request.method in STANDARD_HTTP_METHODS else "OTHER"
 
             HTTP_REQUESTS_TOTAL.labels(
-                method=request.method,
-                endpoint=normalized_endpoint,
+                method=method,
+                endpoint=endpoint,
                 status=str(status_code)
             ).inc()
 
             HTTP_REQUEST_DURATION_SECONDS.labels(
-                method=request.method,
-                endpoint=normalized_endpoint
+                method=method,
+                endpoint=endpoint
             ).observe(duration)
 
 

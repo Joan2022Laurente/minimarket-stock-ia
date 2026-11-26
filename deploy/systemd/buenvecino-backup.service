@@ -1,0 +1,23 @@
+[Unit]
+Description=Respaldo PostgreSQL verificado de Buen Vecino
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=buenvecino-ops
+Group=buenvecino-ops
+WorkingDirectory=/opt/buenvecino
+EnvironmentFile=/etc/buenvecino/backup.env
+ExecStart=/usr/bin/bash /opt/buenvecino/deploy/scripts/backup.sh --storage s3
+TimeoutStartSec=45min
+StateDirectory=buenvecino/backup
+StateDirectoryMode=0700
+ReadWritePaths=/var/lib/buenvecino/textfile
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+StandardOutput=journal
+StandardError=journal

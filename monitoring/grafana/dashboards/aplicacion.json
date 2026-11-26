@@ -1,0 +1,1840 @@
+{
+  "uid": "buenvecino-aplicacion",
+  "title": "Buen Vecino | Aplicación y Predicciones",
+  "description": "Operaciones de laboratorio con fixtures. WAPE carece de procedencia validada para negocio. /ready y respaldo verificado siguen pendientes.",
+  "tags": [
+    "buen-vecino",
+    "observabilidad"
+  ],
+  "schemaVersion": 39,
+  "timezone": "browser",
+  "editable": false,
+  "refresh": "30s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "entorno",
+        "label": "Entorno",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "buenvecino-prometheus"
+        },
+        "definition": "label_values(up, environment)",
+        "query": {
+          "query": "label_values(up, environment)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Disponibilidad y tráfico",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Scrape de FastAPI",
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Disponibilidad de las métricas privadas. No mide Supabase.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "min(up{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"})",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "noValue": "Sin datos",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Caído",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "Disponible",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Solicitudes por segundo",
+      "gridPos": {
+        "x": 6,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Tasa observada por FastAPI, excluye el proxy.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(http_requests_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[$__rate_interval]))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "noValue": "Sin tráfico",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Solicitudes en el periodo",
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Aumento del contador durante el intervalo.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(http_requests_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[$__range]))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Sin tráfico",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Sondeo Caddy y SPA",
+      "gridPos": {
+        "x": 18,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Resultado del sondeo HTTP y HTML. Solo se muestra si es reciente.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "minimarket_probe_success{job=\"node-exporter\",check=\"spa\",environment=~\"${entorno:regex}\"} and on(instance,check) (time() - minimarket_probe_timestamp_seconds{job=\"node-exporter\",check=\"spa\",environment=~\"${entorno:regex}\"} <= 45)",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "noValue": "Sin sondeo reciente",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Fallo",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "Correcto",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Solicitudes por método",
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Tasa HTTP por método.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (method) (rate(http_requests_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[$__rate_interval]))",
+          "legendFormat": "{{method}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Solicitudes por endpoint",
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Plantillas FastAPI. La etiqueta unmatched cubre rutas desconocidas.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "topk(8, sum by (endpoint) (rate(http_requests_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[$__rate_interval])))",
+          "legendFormat": "{{endpoint}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "Rendimiento",
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Promedio y percentiles HTTP",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Incluye todos los códigos. P95 y P99 son estimaciones del histograma.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(http_request_duration_seconds_sum{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[$__rate_interval])) / (sum(rate(http_request_duration_seconds_count{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[$__rate_interval])) > 0)",
+          "legendFormat": "Promedio",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[$__rate_interval])))",
+          "legendFormat": "P95",
+          "refId": "B",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[$__rate_interval])))",
+          "legendFormat": "P99",
+          "refId": "C",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "P95 del POST de ventas",
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Al menos 10 observaciones en 15 min. Objetivo inferior a 1 s. El histograma carece de label de status.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "(histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"fastapi-backend\",environment=~\"${entorno:regex}\",method=\"POST\",endpoint=\"/api/v1/ventas\"}[15m])))) and on() (sum(increase(http_request_duration_seconds_count{job=\"fastapi-backend\",environment=~\"${entorno:regex}\",method=\"POST\",endpoint=\"/api/v1/ventas\"}[15m])) >= 10)",
+          "legendFormat": "P95 ventas",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Muestra insuficiente",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "line"
+            },
+            "axisSoftMax": 1
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Muestras de ventas",
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Cantidad de intentos en la ventana P95. Mínimo provisional 10.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(http_request_duration_seconds_count{job=\"fastapi-backend\",environment=~\"${entorno:regex}\",method=\"POST\",endpoint=\"/api/v1/ventas\"}[15m]))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Sin muestras",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Duración de sondeo",
+      "gridPos": {
+        "x": 6,
+        "y": 22,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Duración observada en el último sondeo HTTP.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "minimarket_probe_duration_seconds{job=\"node-exporter\",check=\"spa\",environment=~\"${entorno:regex}\"}",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Sin sondeo",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Edad de sondeo",
+      "gridPos": {
+        "x": 12,
+        "y": 22,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Segundos desde la última ejecución. Umbral 45 s.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "time() - minimarket_probe_timestamp_seconds{job=\"node-exporter\",check=\"spa\",environment=~\"${entorno:regex}\"}",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Sin sondeo",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 45
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Estado HTTP del sondeo",
+      "gridPos": {
+        "x": 18,
+        "y": 22,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Código HTTP. Cero significa que no se obtuvo respuesta.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "minimarket_probe_http_status_code{job=\"node-exporter\",check=\"spa\",environment=~\"${entorno:regex}\"}",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "noValue": "Sin sondeo",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "row",
+      "title": "Errores",
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Errores 4xx",
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 8,
+        "h": 4
+      },
+      "description": "Aumento estimado en el intervalo seleccionado.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(http_requests_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\",status=~\"4..\"}[$__range]))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Sin series 4xx",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 17,
+      "type": "stat",
+      "title": "Errores 5xx",
+      "gridPos": {
+        "x": 8,
+        "y": 27,
+        "w": 8,
+        "h": 4
+      },
+      "description": "Respuestas 5xx de FastAPI en el intervalo seleccionado.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(http_requests_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\",status=~\"5..\"}[$__range]))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Sin series 5xx",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 18,
+      "type": "stat",
+      "title": "Porcentaje 5xx",
+      "gridPos": {
+        "x": 16,
+        "y": 27,
+        "w": 8,
+        "h": 4
+      },
+      "description": "Ventana de cinco minutos. Omite denominadores sin solicitudes.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "100 * (sum(increase(http_requests_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\",status=~\"5..\"}[5m])) or on() (0 * sum(increase(http_requests_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[5m])))) / (sum(increase(http_requests_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[5m])) > 0)",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "noValue": "Sin tráfico",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 19,
+      "type": "timeseries",
+      "title": "Errores por endpoint",
+      "gridPos": {
+        "x": 0,
+        "y": 31,
+        "w": 24,
+        "h": 8
+      },
+      "description": "Tasa de 4xx y 5xx por plantilla.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (endpoint,status) (rate(http_requests_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\",status=~\"[45]..\"}[$__rate_interval]))",
+          "legendFormat": "{{endpoint}} · {{status}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "type": "row",
+      "title": "Operación del minimarket",
+      "gridPos": {
+        "x": 0,
+        "y": 39,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "Ventas en el periodo",
+      "gridPos": {
+        "x": 0,
+        "y": 40,
+        "w": 12,
+        "h": 4
+      },
+      "description": "En laboratorio representa fixtures y ventas en memoria.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(sales_registered_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[$__range]))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Sin ventas observadas",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 22,
+      "type": "stat",
+      "title": "Recaudación observada",
+      "gridPos": {
+        "x": 12,
+        "y": 40,
+        "w": 12,
+        "h": 4
+      },
+      "description": "Incremento del contador PEN, con fines operativos.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(sales_revenue_soles_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[$__range]))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: PEN",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 23,
+      "type": "timeseries",
+      "title": "Ventas por método de pago",
+      "gridPos": {
+        "x": 0,
+        "y": 44,
+        "w": 24,
+        "h": 8
+      },
+      "description": "Incremento por intervalo y label metodo_pago.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (metodo_pago) (increase(sales_registered_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"}[$__rate_interval]))",
+          "legendFormat": "{{metodo_pago}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 24,
+      "type": "row",
+      "title": "Predicciones y continuidad",
+      "gridPos": {
+        "x": 0,
+        "y": 52,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 25,
+      "type": "stat",
+      "title": "Último entrenamiento",
+      "gridPos": {
+        "x": 0,
+        "y": 53,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Se omite el valor inicial del gauge.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "ml_training_duration_seconds{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"} > 0",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Sin entrenamiento",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 26,
+      "type": "stat",
+      "title": "WAPE · procedencia sin validar",
+      "gridPos": {
+        "x": 6,
+        "y": 53,
+        "w": 6,
+        "h": 4
+      },
+      "description": "En laboratorio usa fixtures sintéticos. Sin procedencia validada para medir precisión de negocio.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "ml_wape_score{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"} and on(instance,environment) (ml_training_duration_seconds{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"} > 0)",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "noValue": "Sin entrenamiento",
+          "mappings": [],
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "gray"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 27,
+      "type": "stat",
+      "title": "Predicciones generadas",
+      "gridPos": {
+        "x": 12,
+        "y": 53,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Total de predicciones desde el arranque del proceso. El contador se reinicia al recrear FastAPI.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(ml_predictions_generated_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"})",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Sin predicciones",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 28,
+      "type": "stat",
+      "title": "Edad del respaldo verificado",
+      "gridPos": {
+        "x": 18,
+        "y": 53,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Solo consulta Node Exporter. Pendiente hasta INIT-005.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "time() - (backup_last_success_timestamp{job=\"node-exporter\",environment=~\"${entorno:regex}\"} > 0)",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Pendiente de integración",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "gray",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 93600
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 29,
+      "type": "timeseries",
+      "title": "Predicciones por nivel",
+      "gridPos": {
+        "x": 0,
+        "y": 57,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Contador acumulado por nivel desde el arranque del proceso. En laboratorio proviene de datos sint?ticos.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (nivel_alerta) (ml_predictions_generated_total{job=\"fastapi-backend\",environment=~\"${entorno:regex}\"})",
+          "legendFormat": "{{nivel_alerta}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 30,
+      "type": "stat",
+      "title": "Tamaño del respaldo verificado",
+      "gridPos": {
+        "x": 12,
+        "y": 57,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Solo con timestamp válido del mismo Node Exporter.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "backup_last_size_bytes{job=\"node-exporter\",environment=~\"${entorno:regex}\"} and on(instance,environment) (backup_last_success_timestamp{job=\"node-exporter\",environment=~\"${entorno:regex}\"} > 0)",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "Pendiente de integración",
+          "mappings": [],
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "gray"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    }
+  ]
+}

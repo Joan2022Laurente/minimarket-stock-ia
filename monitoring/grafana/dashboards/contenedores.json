@@ -1,0 +1,917 @@
+{
+  "uid": "buenvecino-contenedores",
+  "title": "Buen Vecino | Contenedores Docker",
+  "description": "Series Compose con muestra reciente de cAdvisor. Presencia, scrape y salud funcional son señales independientes.",
+  "tags": [
+    "buen-vecino",
+    "observabilidad"
+  ],
+  "schemaVersion": 39,
+  "timezone": "browser",
+  "editable": false,
+  "refresh": "30s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "entorno",
+        "label": "Entorno",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "buenvecino-prometheus"
+        },
+        "definition": "label_values(up, environment)",
+        "query": {
+          "query": "label_values(up, environment)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      },
+      {
+        "type": "query",
+        "name": "proyecto",
+        "label": "Proyecto Compose",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "buenvecino-prometheus"
+        },
+        "definition": "label_values(container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\"}, container_label_com_docker_compose_project)",
+        "query": {
+          "query": "label_values(container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\"}, container_label_com_docker_compose_project)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      },
+      {
+        "type": "query",
+        "name": "servicio",
+        "label": "Servicio",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "buenvecino-prometheus"
+        },
+        "definition": "label_values(container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service!=\"\"}, container_label_com_docker_compose_service)",
+        "query": {
+          "query": "label_values(container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service!=\"\"}, container_label_com_docker_compose_service)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "cAdvisor",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Estado del scrape del exporter.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "min(up{job=\"cadvisor\",environment=~\"${entorno:regex}\"})",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "noValue": "Sin datos",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Caído",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "Disponible",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Servicios observados",
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Servicios Compose distintos con muestra de los últimos 45 segundos.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "count(count by (container_label_com_docker_compose_project,container_label_com_docker_compose_service) ((time() - container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"} < 45)))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "CPU total",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "description": "CPU observada en núcleos consumidos.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(sum by (container_label_com_docker_compose_project,container_label_com_docker_compose_service) ((rate(container_cpu_usage_seconds_total{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\",cpu=\"total\"}[$__rate_interval])) and on(instance,id) (time() - container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"} < 45)))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: núcleos",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Working set total",
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Memoria activa aproximada de servicios filtrados.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(sum by (container_label_com_docker_compose_project,container_label_com_docker_compose_service) ((container_memory_working_set_bytes{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"}) and on(instance,id) (time() - container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"} < 45)))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "CPU por servicio",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "description": "La serie cpu=total evita duplicar el consumo por CPU.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (container_label_com_docker_compose_project,container_label_com_docker_compose_service) ((rate(container_cpu_usage_seconds_total{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\",cpu=\"total\"}[$__rate_interval])) and on(instance,id) (time() - container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"} < 45))",
+          "legendFormat": "{{container_label_com_docker_compose_project}} / {{container_label_com_docker_compose_service}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: núcleos",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "RAM por servicio",
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Uso total de memoria reportado, puede incluir caché.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (container_label_com_docker_compose_project,container_label_com_docker_compose_service) ((container_memory_usage_bytes{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"}) and on(instance,id) (time() - container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"} < 45))",
+          "legendFormat": "{{container_label_com_docker_compose_project}} / {{container_label_com_docker_compose_service}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Working set por servicio",
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 8
+      },
+      "description": "Memoria después de descontar una parte de la caché de páginas.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (container_label_com_docker_compose_project,container_label_com_docker_compose_service) ((container_memory_working_set_bytes{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"}) and on(instance,id) (time() - container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"} < 45))",
+          "legendFormat": "{{container_label_com_docker_compose_project}} / {{container_label_com_docker_compose_service}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Red RX por servicio",
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Bytes recibidos por segundo sin interfaz loopback.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (container_label_com_docker_compose_project,container_label_com_docker_compose_service) ((rate(container_network_receive_bytes_total{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\",interface!=\"lo\"}[$__rate_interval])) and on(instance,id) (time() - container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"} < 45))",
+          "legendFormat": "{{container_label_com_docker_compose_project}} / {{container_label_com_docker_compose_service}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Red TX por servicio",
+      "gridPos": {
+        "x": 12,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Bytes transmitidos por segundo sin interfaz loopback.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (container_label_com_docker_compose_project,container_label_com_docker_compose_service) ((rate(container_network_transmit_bytes_total{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\",interface!=\"lo\"}[$__rate_interval])) and on(instance,id) (time() - container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"} < 45))",
+          "legendFormat": "{{container_label_com_docker_compose_project}} / {{container_label_com_docker_compose_service}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Lecturas por servicio",
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Operaciones por segundo, solo series E/S con device identificado.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (container_label_com_docker_compose_project,container_label_com_docker_compose_service) ((rate(container_fs_reads_total{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\",device!=\"\"}[$__rate_interval])) and on(instance,id) (time() - container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"} < 45))",
+          "legendFormat": "{{container_label_com_docker_compose_project}} / {{container_label_com_docker_compose_service}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Escrituras por servicio",
+      "gridPos": {
+        "x": 12,
+        "y": 28,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Operaciones por segundo. Confirmar alcance de cgroups en EC2.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (container_label_com_docker_compose_project,container_label_com_docker_compose_service) ((rate(container_fs_writes_total{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\",device!=\"\"}[$__rate_interval])) and on(instance,id) (time() - container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"} < 45))",
+          "legendFormat": "{{container_label_com_docker_compose_project}} / {{container_label_com_docker_compose_service}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Presencia reciente",
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 24,
+        "h": 7
+      },
+      "description": "Edad de muestra por servicio. Una fila indica telemetría, no un healthcheck.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "min by (container_label_com_docker_compose_project,container_label_com_docker_compose_service) ((time() - container_last_seen{job=\"cadvisor\",environment=~\"${entorno:regex}\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\",container_label_com_docker_compose_project=~\"${proyecto:regex}\",container_label_com_docker_compose_service=~\"${servicio:regex}\"} < 45))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    }
+  ]
+}

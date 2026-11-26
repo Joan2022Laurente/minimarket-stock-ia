@@ -1,0 +1,985 @@
+{
+  "uid": "buenvecino-infraestructura",
+  "title": "Buen Vecino | Infraestructura",
+  "description": "En Docker Desktop corresponde a la VM Linux y a los namespaces de sus collectors. En EC2 validar dispositivos, montajes e interfaces.",
+  "tags": [
+    "buen-vecino",
+    "observabilidad"
+  ],
+  "schemaVersion": 39,
+  "timezone": "browser",
+  "editable": false,
+  "refresh": "30s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "entorno",
+        "label": "Entorno",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "buenvecino-prometheus"
+        },
+        "definition": "label_values(up, environment)",
+        "query": {
+          "query": "label_values(up, environment)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      },
+      {
+        "type": "query",
+        "name": "instancia",
+        "label": "Instancia",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "buenvecino-prometheus"
+        },
+        "definition": "label_values(up{job=\"node-exporter\",environment=~\"${entorno:regex}\"}, instance)",
+        "query": {
+          "query": "label_values(up{job=\"node-exporter\",environment=~\"${entorno:regex}\"}, instance)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      },
+      {
+        "type": "query",
+        "name": "interfaz",
+        "label": "Interfaz",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "buenvecino-prometheus"
+        },
+        "definition": "label_values(node_network_receive_bytes_total{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\",device=~\"(eth|en|bond)[a-zA-Z0-9_.-]*\"}, device)",
+        "query": {
+          "query": "label_values(node_network_receive_bytes_total{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\",device=~\"(eth|en|bond)[a-zA-Z0-9_.-]*\"}, device)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Node Exporter",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Disponibilidad del scrape según Prometheus.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "min(up{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"})",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "noValue": "Sin datos",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Caído",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "Disponible",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "CPU utilizada",
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "description": "Actividad de CPU Linux, promedio móvil de 5 minutos.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "max(100 * (1 - avg by (instance,environment) (rate(node_cpu_seconds_total{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\",mode=\"idle\"}[5m]))))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "RAM utilizada",
+      "gridPos": {
+        "x": 9,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "description": "100 × (1 − memoria disponible / total).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "max(100 * (1 - node_memory_MemAvailable_bytes{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"} / node_memory_MemTotal_bytes{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"}))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Disco más ocupado",
+      "gridPos": {
+        "x": 14,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "description": "Máximo de filesystems seleccionados de lectura y escritura.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "max((100 * (1 - node_filesystem_avail_bytes{job=\"node-exporter\",fstype=~\"ext[234]|xfs|btrfs|zfs\",mountpoint=~\"/|/var/lib|/var/lib/docker|/srv/buenvecino\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"} / (node_filesystem_size_bytes{job=\"node-exporter\",fstype=~\"ext[234]|xfs|btrfs|zfs\",mountpoint=~\"/|/var/lib|/var/lib/docker|/srv/buenvecino\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"} > 0))) and on(instance,device,mountpoint) (node_filesystem_readonly{job=\"node-exporter\",fstype=~\"ext[234]|xfs|btrfs|zfs\",mountpoint=~\"/|/var/lib|/var/lib/docker|/srv/buenvecino\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"} == 0))",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Uptime",
+      "gridPos": {
+        "x": 19,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "description": "Segundos desde el arranque Linux.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "min(time() - node_boot_time_seconds{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"})",
+          "legendFormat": "__auto",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Uso de CPU",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Inactividad descontada de los CPU observados.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "100 * (1 - avg by (instance,environment) (rate(node_cpu_seconds_total{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\",mode=\"idle\"}[5m])))",
+          "legendFormat": "{{instance}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Memoria",
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "description": "RAM usada y disponible, incluida la memoria recuperable.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "node_memory_MemTotal_bytes{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"} - node_memory_MemAvailable_bytes{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"}",
+          "legendFormat": "Usada {{instance}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "node_memory_MemAvailable_bytes{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"}",
+          "legendFormat": "Disponible {{instance}}",
+          "refId": "B",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Ocupación por filesystem",
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Por montaje real seleccionado. Excluye pseudo-filesystems y montajes de solo lectura.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "(100 * (1 - node_filesystem_avail_bytes{job=\"node-exporter\",fstype=~\"ext[234]|xfs|btrfs|zfs\",mountpoint=~\"/|/var/lib|/var/lib/docker|/srv/buenvecino\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"} / (node_filesystem_size_bytes{job=\"node-exporter\",fstype=~\"ext[234]|xfs|btrfs|zfs\",mountpoint=~\"/|/var/lib|/var/lib/docker|/srv/buenvecino\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"} > 0))) and on(instance,device,mountpoint) (node_filesystem_readonly{job=\"node-exporter\",fstype=~\"ext[234]|xfs|btrfs|zfs\",mountpoint=~\"/|/var/lib|/var/lib/docker|/srv/buenvecino\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"} == 0)",
+          "legendFormat": "{{mountpoint}} · {{device}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Espacio disponible",
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Bytes utilizables en los montajes seleccionados.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "node_filesystem_avail_bytes{job=\"node-exporter\",fstype=~\"ext[234]|xfs|btrfs|zfs\",mountpoint=~\"/|/var/lib|/var/lib/docker|/srv/buenvecino\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"} and on(instance,device,mountpoint) (node_filesystem_readonly{job=\"node-exporter\",fstype=~\"ext[234]|xfs|btrfs|zfs\",mountpoint=~\"/|/var/lib|/var/lib/docker|/srv/buenvecino\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"} == 0)",
+          "legendFormat": "{{mountpoint}} · {{device}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Red recibida",
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Bytes por segundo por interfaz. En Desktop eth0 puede pertenecer al namespace del exporter.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "rate(node_network_receive_bytes_total{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\",device=~\"(eth|en|bond)[a-zA-Z0-9_.-]*\",device=~\"${interfaz:regex}\"}[$__rate_interval])",
+          "legendFormat": "RX {{device}} · {{instance}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Red transmitida",
+      "gridPos": {
+        "x": 12,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Bytes por segundo por interfaz. Excluye loopback, veth y bridges virtuales.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "rate(node_network_transmit_bytes_total{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\",device=~\"(eth|en|bond)[a-zA-Z0-9_.-]*\",device=~\"${interfaz:regex}\"}[$__rate_interval])",
+          "legendFormat": "TX {{device}} · {{instance}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Carga Linux",
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 24,
+        "h": 8
+      },
+      "description": "Promedio de procesos en ejecución o espera de I/O en tres ventanas.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "buenvecino-prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "node_load1{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"}",
+          "legendFormat": "1 min · {{instance}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "node_load5{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"}",
+          "legendFormat": "5 min · {{instance}}",
+          "refId": "B",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "buenvecino-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "node_load15{job=\"node-exporter\",environment=~\"${entorno:regex}\",instance=~\"${instancia:regex}\"}",
+          "legendFormat": "15 min · {{instance}}",
+          "refId": "C",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "noValue": "Sin datos",
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    }
+  ]
+}

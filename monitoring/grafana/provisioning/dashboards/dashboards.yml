@@ -1,0 +1,10 @@
+apiVersion: 1
+providers:
+  - name: buenvecino
+    orgId: 1
+    folder: Buen Vecino
+    type: file
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards

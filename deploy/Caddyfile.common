@@ -1,0 +1,41 @@
+(edge-security) {
+	header {
+		-X-Powered-By
+		-Server
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+	}
+}
+
+(private-not-found) {
+	header Cache-Control "no-store"
+	respond 404
+}
+
+(block-internal) {
+	@internalPaths path /metrics /metrics/* /uploads /uploads/* /admin /admin/* /grafana /grafana/* /prometheus /prometheus/* /node-exporter /node-exporter/* /cadvisor /cadvisor/* /debug /debug/*
+	handle @internalPaths {
+		import private-not-found
+	}
+}
+
+(backend-response) {
+	reverse_proxy backend:8000 {
+		header_down Cache-Control "no-store"
+	}
+}
+
+(application-routes) {
+	@api path /api/v1 /api/v1/*
+	handle @api {
+		import backend-response
+	}
+
+	handle {
+		encode zstd gzip
+		header Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		reverse_proxy frontend:80
+	}
+}

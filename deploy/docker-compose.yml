@@ -1,149 +1,147 @@
-# ==============================================================================
-# deploy/docker-compose.yml
-# Orquestación completa de servicios en AWS EC2 (t4g.small Graviton2 ARM64)
-# ==============================================================================
-
-version: '3.8'
+x-logging: &rotated-logs
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
 
 services:
-  # 1. Reverse Proxy y TLS Automático con Let's Encrypt
   caddy:
     image: caddy:2-alpine
-    container_name: buenvecino-caddy
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
+    logging: *rotated-logs
+    command: [/bin/sh, /etc/caddy/caddy-production.sh, run]
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      ACME_CA: ${ACME_CA:-staging}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile.common:/etc/caddy/Caddyfile.common:ro
+      - ./scripts/caddy-production.sh:/etc/caddy/caddy-production.sh:ro
       - caddy_data:/data
       - caddy_config:/config
-    networks:
-      - red-buenvecino
+    networks: [red-web]
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_started
+      frontend:
+        condition: service_started
 
-  # 2. Backend FastAPI + Worker de Machine Learning (LightGBM)
   backend:
-    build:
-      context: ../backend
-      dockerfile: Dockerfile
-    container_name: buenvecino-backend
+    image: ${BACKEND_IMAGE:-minimarket-backend:local}
     restart: unless-stopped
+    logging: *rotated-logs
     environment:
-      - ENVIRONMENT=production
-      - PROJECT_NAME=Minimarket El Buen Vecino
-      - API_V1_STR=/api/v1
-      - DATABASE_URL=${DATABASE_URL}
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - AWS_REGION=${AWS_REGION:-us-east-1}
-      - AWS_S3_BACKUP_BUCKET=${AWS_S3_BACKUP_BUCKET}
-    networks:
-      - red-buenvecino
-    deploy:
-      resources:
-        limits:
-          memory: 450M
+      ENVIRONMENT: production
+      API_V1_STR: /api/v1
+      SECRET_KEY: ${SECRET_KEY:?Defina SECRET_KEY en el archivo de entorno del laboratorio}
+      DATABASE_URL: ${DATABASE_URL:-}
+      ALLOWED_ORIGINS: '${ALLOWED_ORIGINS:-["http://localhost:8080"]}'
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_S3_BACKUP_BUCKET: ${AWS_S3_BACKUP_BUCKET:-}
+      ML_MODEL_PATH: ${ML_MODEL_PATH:-/app/app/ml/artifacts/model_latest.joblib}
+      ML_METADATA_PATH: ${ML_METADATA_PATH:-/app/app/ml/artifacts/model_metadata.json}
+    volumes:
+      - ml_artifacts:/app/app/ml/artifacts
+    networks: [red-web, red-monitoreo]
 
-  # 3. Frontend PWA (React + Vite)
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
-    container_name: buenvecino-frontend
+    image: ${FRONTEND_IMAGE:-minimarket-frontend:local}
     restart: unless-stopped
-    networks:
-      - red-buenvecino
-    deploy:
-      resources:
-        limits:
-          memory: 150M
+    logging: *rotated-logs
+    networks: [red-web]
 
-  # 4. Prometheus (Scrape métricas de FastAPI y Exporters)
   prometheus:
     image: prom/prometheus:v2.54.1
-    container_name: buenvecino-prometheus
     restart: unless-stopped
+    logging: *rotated-logs
+    environment:
+      MONITORING_ENVIRONMENT: ${MONITORING_ENVIRONMENT:-sin-etiquetar}
     volumes:
       - ../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
+    entrypoint: [/bin/sh, -ec]
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=15d'
-    networks:
-      - red-buenvecino
-    deploy:
-      resources:
-        limits:
-          memory: 350M
+      - |
+        case "$$MONITORING_ENVIRONMENT" in
+          laboratorio|produccion|sin-etiquetar) ;;
+          *) echo 'MONITORING_ENVIRONMENT invalido' >&2; exit 2 ;;
+        esac
+        sed "s/__MONITORING_ENVIRONMENT__/$$MONITORING_ENVIRONMENT/g" /etc/prometheus/prometheus.yml > /tmp/prometheus-effective.yml
+        exec /bin/prometheus --config.file=/tmp/prometheus-effective.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=7d
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:9090/-/ready']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [red-monitoreo]
 
-  # 5. Grafana (Dashboards ALT-01 a ALT-06)
   grafana:
     image: grafana/grafana:11.2.0
-    container_name: buenvecino-grafana
     restart: unless-stopped
+    logging: *rotated-logs
     environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
-      - GF_USERS_ALLOW_SIGN_UP=false
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Defina GRAFANA_ADMIN_PASSWORD en el archivo de entorno del laboratorio}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
     volumes:
-      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ../monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ../monitoring/grafana/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
+      - ../monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
-    networks:
-      - red-buenvecino
-    deploy:
-      resources:
-        limits:
-          memory: 250M
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:3000/api/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [red-monitoreo]
 
-  # 6. cAdvisor (Métricas de contenedores Docker)
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
-    container_name: buenvecino-cadvisor
+    image: gcr.io/cadvisor/cadvisor:v0.54.1
     restart: unless-stopped
+    logging: *rotated-logs
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
       - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    networks:
-      - red-buenvecino
-    deploy:
-      resources:
-        limits:
-          memory: 150M
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    networks: [red-monitoreo]
 
-  # 7. Node Exporter (Métricas del host EC2: CPU, RAM, Disco)
   node-exporter:
     image: prom/node-exporter:v1.8.2
-    container_name: buenvecino-node-exporter
     restart: unless-stopped
+    logging: *rotated-logs
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
+      - type: bind
+        source: ${MONITORING_TEXTFILE_DIR:-../monitoring/node-exporter/textfile}
+        target: /textfile
+        read_only: true
+        bind:
+          create_host_path: false
     command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--path.rootfs=/rootfs'
-    networks:
-      - red-buenvecino
-    deploy:
-      resources:
-        limits:
-          memory: 80M
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.textfile.directory=/textfile
+    networks: [red-monitoreo]
 
 networks:
-  red-buenvecino:
+  red-web:
+    driver: bridge
+  red-monitoreo:
     driver: bridge
 
 volumes:
   caddy_data:
   caddy_config:
+  ml_artifacts:
   prometheus_data:
   grafana_data:

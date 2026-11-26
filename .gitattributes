@@ -1,0 +1,13 @@
+*.sh text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+.env.example text eol=lf
+deploy/Caddyfile text eol=lf
+deploy/Caddyfile.* text eol=lf
+frontend/nginx.conf text eol=lf
+deploy/*.yml text eol=lf
+monitoring/**/*.yml text eol=lf
+deploy/systemd/*.service text eol=lf
+deploy/systemd/*.timer text eol=lf
+.github/workflows/*.yml text eol=lf
+frontend/tests-e2e/*.mjs text eol=lf

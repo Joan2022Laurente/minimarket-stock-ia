@@ -1,0 +1,32 @@
+services:
+  caddy:
+    command: [caddy, run, --config, /etc/caddy/Caddyfile, --adapter, caddyfile]
+    volumes:
+      - ./Caddyfile.dev:/etc/caddy/Caddyfile:ro
+    ports:
+      - "127.0.0.1:8080:80"
+
+  backend:
+    build:
+      context: ../backend
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      # El laboratorio usa los fixtures existentes aunque el shell tenga otra DSN.
+      DATABASE_URL: ""
+      AWS_S3_BACKUP_BUCKET: minimarket-local-fixtures
+      AWS_EC2_METADATA_DISABLED: "true"
+      AWS_SHARED_CREDENTIALS_FILE: /dev/null
+      AWS_CONFIG_FILE: /dev/null
+      BOTO_CONFIG: /dev/null
+
+  frontend:
+    build:
+      context: ../frontend
+
+  prometheus:
+    environment:
+      MONITORING_ENVIRONMENT: laboratorio
+
+  grafana:
+    ports:
+      - "127.0.0.1:3000:3000"

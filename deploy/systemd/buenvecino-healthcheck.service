@@ -1,0 +1,19 @@
+[Unit]
+Description=Sondeo funcional de Caddy y la SPA de Buen Vecino
+
+[Service]
+Type=oneshot
+User=buenvecino-ops
+Group=buenvecino-ops
+WorkingDirectory=/opt/buenvecino
+EnvironmentFile=/etc/buenvecino/probe.env
+ExecStart=/usr/bin/bash /opt/buenvecino/deploy/scripts/healthcheck.sh --probe-only --url ${PROBE_URL}
+TimeoutStartSec=10s
+ReadWritePaths=/var/lib/buenvecino/textfile
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+StandardOutput=journal
+StandardError=journal

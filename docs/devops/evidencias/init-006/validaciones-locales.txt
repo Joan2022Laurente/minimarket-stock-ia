@@ -1,0 +1,56 @@
+INIT-006 | Ensayo local, genni@8a049c4, 2026-11-26
+Docker Desktop Engine 28.5.1 linux/amd64, Compose 2.40.2 y Buildx 0.29.1.
+Scope de la evidencia: working tree. Ejecuciones GitHub y GHCR pendientes.
+
+PASS actionlint 1.7.12 para ci.yml y publish.yml.
+PASS ShellCheck 0.10.0 y bash -n en scripts de operación, preflight y CI.
+PASS YAML, Python, LF, bases Docker fijadas y control de patrones de secretos.
+PASS Caddy dev, HTTPS con CA staging en red deshabilitada y preflight con salida 78.
+PASS systemd-analyze verify en Linux desechable. Próxima ejecución 08:00 UTC,
+equivalente a las 03:00 de Lima. Sondeo OnUnitActiveSec=15s.
+PASS promtool check config renderizada y promtool test rules.
+PASS validación estática de tres dashboards, 54 consultas, siete reglas y ALT-06 pausada.
+
+PASS target backend test. Pytest sin red: 20 aprobadas, 0 fallidas, 0 errores,
+0 omitidas. Un aviso de compatibilidad Starlette/HTTPX.
+PASS pip check: No broken requirements found.
+PASS runtime OCI backend: FastAPI, LightGBM, psycopg2 y python-multipart,
+UID 10001, un worker y ausencia de pytest, .env y dumps en /app.
+PASS npm ci y build en Node 22.23.5, Vite 6.4.6 y TypeScript 5.7.3.
+PASS index.html, assets, manifest.webmanifest y sw.js del candidato frontend.
+El primer npm ci nativo encontró EPERM en node_modules de OneDrive.
+Se restauró la instalación local y se reprodujo el build en un contenedor Node 22.
+
+PASS PostgreSQL 18.0 por digest, sin red, migraciones 001 a 003 y RLS activo.
+PASS CHECK de stock, FK, dump de 44581 bytes, SHA-256 y restauración.
+Conteos iguales en las ocho tablas, una fila por tabla, ticket relacionado,
+stock, secuencia 1:true y dos funciones. Venta de fixture tras restore confirmada.
+PASS exportación/restore corrupto, SHA incorrecto, destino denegado, concurrencia,
+falta de CLI, transferencia y verificación simuladas sin falso éxito.
+La prueba RLS de laboratorio acredita habilitación y políticas presentes.
+
+PASS OCI Linux amd64 y paridad de configuración/capas en las imágenes cargadas.
+backend OCI sha256:19942c45a88f672e0409cc0e8d669956e0fe2cbc134398d7469f93517f2c3a5c
+frontend OCI sha256:8a40e541261179d2028a7614feaf7ee372798ddc03e276530d6edad25b4345cd
+Tamaño de tar OCI: backend 201905152 bytes y frontend 28959232 bytes.
+PASS manifests amd64 y ARM64 de Python, Node, Nginx, cAdvisor, Trivy y Skopeo.
+NOT RUN build y smoke nativos ARM64.
+
+PASS Compose base y dev, dos redes, cinco volúmenes, montajes, y solo
+127.0.0.1:8080 y 127.0.0.1:3000 publicados. nginx -t válido.
+PASS siete servicios y guard productivo backend con exit 78.
+Gateway: / y /inventario 200, /health 200, /api/v1/productos 401,
+/metrics 404 y /uploads/fixture 404.
+PASS cAdvisor observó siete servicios, tres targets activos y tres dashboards.
+PASS siete reglas de Grafana, ALT-06 pausada y muestra TSDB tras reiniciar.
+PASS E2E fixture: login, venta, Kardex (1 fila), ticket, predicción sintética
+(28 filas) y logout. PWA registró SW y mantuvo API protegida y ausente offline.
+Los siete servicios de buenvecino-init006 quedaron detenidos por el helper.
+Se verificaron los cinco volúmenes Compose conservados.
+
+PASS Trivy 0.76.2 completó los tres escaneos. Base del 2026-11-26 13:14:47 UTC.
+Backend: 0 CRITICAL, 54 HIGH, 105 MEDIUM, 99 LOW, 15 UNKNOWN.
+Frontend: 0 CRITICAL, 1 HIGH (DS-0002), 5 MEDIUM.
+Lockfile frontend: 0 CRITICAL, 0 HIGH, 2 MEDIUM.
+PASS contrato y digests OCI del manifiesto local. Se rechazó una plataforma
+incongruente. Registro no verificado ni aprobado para producción.

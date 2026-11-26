@@ -4,7 +4,7 @@
 # ==============================================================================
 
 # --- Etapa 1: Builder ---
-FROM node:22-alpine AS builder
+FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a AS builder
 
 WORKDIR /app
 
@@ -15,26 +15,15 @@ COPY . .
 RUN npm run build
 
 # --- Etapa 2: Servidor de Producción (Nginx ligero) ---
-FROM nginx:alpine AS runner
+FROM nginx:alpine@sha256:7fc0fb4af7bf006aeb31aea88069976060f8f0a0a86b667126742cc17f4e31ae AS runner
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Configuración Nginx para Single Page Application (SPA / React Router)
-RUN echo 'server { \
-    listen 80; \
-    server_name localhost; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-    location /api/ { \
-        proxy_pass http://backend:8000; \
-        proxy_set_header Host $host; \
-        proxy_set_header X-Real-IP $remote_addr; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["wget", "-q", "-O", "/dev/null", "http://127.0.0.1/index.html"]
 
 CMD ["nginx", "-g", "daemon off;"]

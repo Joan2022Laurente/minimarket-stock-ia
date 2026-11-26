@@ -1,0 +1,10 @@
+[Unit]
+Description=Respaldo diario de Buen Vecino a las 03:00 de Lima
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 America/Lima
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

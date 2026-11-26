@@ -1,0 +1,203 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [genni, main]
+  workflow_dispatch:
+    inputs:
+      architecture:
+        description: Plataforma nativa de las imágenes candidatas
+        type: choice
+        options: [amd64, arm64]
+        default: amd64
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}-${{ inputs.architecture || 'amd64' }}
+  cancel-in-progress: true
+
+env:
+  CI_ARCH: ${{ inputs.architecture || 'amd64' }}
+  REPORT_RETENTION_DAYS: ${{ vars.CI_REPORT_RETENTION_DAYS || '5' }}
+
+jobs:
+  static:
+    name: Configuración e infraestructura
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Validar Bash, systemd, workflows y archivos de configuración
+        env:
+          ARM64_ENABLED: ${{ vars.CI_ARM64_ENABLED }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/reports"
+          if [[ "$CI_ARCH" == arm64 && "$ARM64_ENABLED" != true ]]; then
+            echo 'CI ARM64 requiere activación explícita del encargado de Cloud.'
+            exit 1
+          fi
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-yaml shellcheck
+          {
+            docker run --rm --network none -v "$PWD:/work:ro" -w /work \
+              rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+            shellcheck -x deploy/scripts/{setup,start,stop,healthcheck,backup,restore,caddy-production}.sh deploy/tests/*.sh
+            bash deploy/tests/ci-stack.sh static "$RUNNER_TEMP" "buenvecino-ci-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          } 2>&1 | tee "$RUNNER_TEMP/reports/infrastructure.txt"
+      - name: Guardar evidencia de infraestructura
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: infrastructure-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/reports/infrastructure.txt
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
+          if-no-files-found: ignore
+
+  backend:
+    name: Pytest y dependencias Python
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Construir target test y ejecutar sin red
+        run: |
+          mkdir -p "$RUNNER_TEMP/reports"
+          docker build --target test -t minimarket-backend:ci-tests ./backend \
+            2>&1 | tee "$RUNNER_TEMP/reports/backend-build.txt"
+          docker run --rm --network none minimarket-backend:ci-tests python -m pip check
+          container=$(docker create --network none minimarket-backend:ci-tests \
+            python -m pytest -p no:cacheprovider -q --junitxml=/tmp/pytest.xml)
+          trap 'docker rm -f "$container" >/dev/null' EXIT
+          docker start -a "$container" > "$RUNNER_TEMP/pytest-raw.txt" 2>&1 || true
+          docker cp "$container:/tmp/pytest.xml" "$RUNNER_TEMP/pytest-raw.xml"
+          python3 deploy/tests/ci_checks.py junit "$RUNNER_TEMP/pytest-raw.xml" "$RUNNER_TEMP/reports/pytest.xml" \
+            | tee "$RUNNER_TEMP/reports/pytest.txt"
+          test "$(docker inspect --format '{{.State.ExitCode}}' "$container")" = 0
+      - name: Guardar Pytest y build
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: backend-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/reports/
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
+
+  frontend:
+    name: TypeScript, Vite y PWA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Compilar y verificar dist
+        run: |
+          mkdir -p "$RUNNER_TEMP/reports"
+          {
+            node --version
+            npm --prefix frontend ci --no-audit
+            npm --prefix frontend run build
+            python3 deploy/tests/ci_checks.py bundle frontend/dist
+          } 2>&1 | tee "$RUNNER_TEMP/reports/frontend.txt"
+      - if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: frontend-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/reports/frontend.txt
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
+
+  postgres:
+    name: PostgreSQL, RLS y continuidad
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Aplicar migraciones, respaldar y restaurar sin red
+        run: |
+          mkdir -p "$RUNNER_TEMP/reports"
+          bash deploy/tests/ci-stack.sh postgres "$RUNNER_TEMP" "buenvecino-ci-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
+            2>&1 | tee "$RUNNER_TEMP/reports/postgres.txt"
+      - if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: postgres-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/reports/postgres.txt
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
+
+  images:
+    name: OCI, smoke, E2E y Trivy
+    needs: [static, backend, frontend, postgres]
+    runs-on: ${{ inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/tests-e2e/package-lock.json
+      - name: Preparar navegador y laboratorio
+        run: |
+          mkdir -p "$RUNNER_TEMP/candidate/reports" "$RUNNER_TEMP/smoke"
+          npm --prefix frontend/tests-e2e ci --no-audit
+          (cd frontend/tests-e2e && node node_modules/playwright-core/cli.js install --with-deps chromium)
+      - name: Construir y cargar imágenes OCI
+        run: |
+          bash deploy/tests/ci-images.sh build "$RUNNER_TEMP/candidate" "buenvecino-ci-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
+            2>&1 | tee "$RUNNER_TEMP/candidate/reports/oci-build.txt"
+      - name: Ejecutar smoke y navegador sobre las imágenes cargadas
+        env:
+          CI_RUN_E2E: '1'
+        run: |
+          project="buenvecino-ci-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          export CI_BACKEND_IMAGE="minimarket-backend:$project"
+          export CI_FRONTEND_IMAGE="minimarket-frontend:$project"
+          bash deploy/tests/ci-stack.sh smoke "$RUNNER_TEMP/smoke" "$project" \
+            2>&1 | tee "$RUNNER_TEMP/candidate/reports/smoke.txt"
+      - name: Escanear imágenes y dependencias frontend
+        run: |
+          bash deploy/tests/ci-images.sh scan "$RUNNER_TEMP/candidate" "buenvecino-ci-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
+            2>&1 | tee "$RUNNER_TEMP/candidate/reports/scanner.txt"
+      - name: Generar manifiesto y bloquear severidad crítica
+        run: |
+          python3 deploy/scripts/candidate.py create "$RUNNER_TEMP/candidate" \
+            --repository "$GITHUB_REPOSITORY" --sha "$GITHUB_SHA" --arch "$CI_ARCH" --source github-actions --tests passed
+      - name: Guardar reportes y estado del candidato
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: images-${{ env.CI_ARCH }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/candidate/reports/
+            ${{ runner.temp }}/candidate/candidate.json
+          retention-days: ${{ env.REPORT_RETENTION_DAYS }}
+          if-no-files-found: ignore
+      - name: Guardar los OCI aprobados de main para publicación manual
+        if: success() && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: candidate-${{ github.sha }}-${{ env.CI_ARCH }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/candidate/backend.oci.tar
+            ${{ runner.temp }}/candidate/frontend.oci.tar
+            ${{ runner.temp }}/candidate/candidate.json
+            ${{ runner.temp }}/candidate/reports/*.json
+          retention-days: ${{ vars.CI_OCI_RETENTION_DAYS || '3' }}
+          compression-level: 0
+          if-no-files-found: error

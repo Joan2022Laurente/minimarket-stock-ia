@@ -1,0 +1,72 @@
+INIT-005 | Docker Desktop Engine 28.5.1 linux/amd64, Compose 2.40.2
+2026-11-26 UTC | Proyecto buenvecino-init005
+
+Operación desde un directorio distinto del checkout
+Docker Engine: activo
+caddy: running sin-healthcheck
+frontend: running healthy
+backend: running healthy
+prometheus: running healthy
+grafana: running healthy
+node-exporter: running sin-healthcheck
+cadvisor: running healthy
+Sondeo SPA: estado=200 exito=1 duracion_s=2.131
+Caddy y SPA: funcionales
+Frontend HTTP interno: accesible
+Backend liveness: 200
+PostgreSQL: BLOCKED, /ready aún no implementado
+Prometheus: accesible
+Grafana: accesible
+NodeExporter: accesible
+cAdvisor: accesible
+PASS --require-ready devuelve 3
+PASS start bloquea producción
+PASS stop protege INIT-004
+
+Publicaciones verificadas
+127.0.0.1:8080 -> caddy:80
+127.0.0.1:3000 -> grafana:3000
+Backend, Prometheus, Node Exporter y cAdvisor sin puertos publicados.
+
+Regresión
+PASS docker compose config --quiet, base y override
+PASS Caddy validate
+PASS nginx -t
+PASS promtool check config /tmp/prometheus-effective.yml
+PASS /metrics del gateway 404
+PASS 20 pruebas backend con --network none, 1 advertencia Starlette/HTTPX
+PASS imagen backend productiva devuelve 78
+PASS ShellCheck v0.10.0
+PASS falta real de PostgreSQL devuelve 4 y no publica métrica
+PASS setup detecta herramientas ausentes y preparación requiere aprobación
+
+Observabilidad
+Target cadvisor up http://cadvisor:8080/metrics
+Target fastapi-backend up http://backend:8000/metrics
+Target node-exporter up http://node-exporter:9100/metrics
+Serie Node Exporter (fixture) backup_last_success_timestamp=1795706258
+Serie Node Exporter (fixture) backup_last_size_bytes=44582
+cAdvisor: siete servicios de INIT-005
+Dashboard provisionado buenvecino-infraestructura
+Dashboard provisionado buenvecino-contenedores
+Dashboard provisionado buenvecino-aplicacion
+ALT-06 provisionada y pausada
+promtool test rules: SUCCESS, con TSDB desechable
+ALT-06: verdadera sin respaldo válido y exporter disponible, falsa cuando el respaldo es reciente o tiene exactamente 26 h, verdadera cuando supera 26 h, sin datos al perder el exporter.
+
+Scheduling (validación estática)
+systemd 257 (257.13-1~deb13u1)
+PASS systemd-analyze verify, cuatro unidades
+Normalized form: *-*-* 03:00:00 America/Lima
+Next elapse: Fri 2026-11-27 08:00:00 UTC
+Referencia de cálculo: 2026-11-26 09:00:00 UTC
+
+Cierre verificado
+backend, caddy, cadvisor, frontend, grafana, node-exporter y prometheus: exited
+buenvecino-init005-postgres: exited
+buenvecino-init005_caddy_config
+buenvecino-init005_caddy_data
+buenvecino-init005_grafana_data
+buenvecino-init005_ml_artifacts
+buenvecino-init005_prometheus_data
+INIT-002, INIT-003 e INIT-004 conservaron sus estados.

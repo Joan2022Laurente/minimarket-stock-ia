@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "environment": "candidate",
+  "repository": "Joan2022Laurente/minimarket-stock-ia",
+  "git_sha": "8a049c47e2c276616c45da60b392ddeb0ac1fd52",
+  "generated_at": "2026-11-26T16:30:01Z",
+  "build": {
+    "source": "working-tree"
+  },
+  "architecture": "linux/amd64",
+  "tests": {
+    "status": "passed"
+  },
+  "scan": {
+    "backend": {
+      "status": "scanned",
+      "severity": {
+        "UNKNOWN": 15,
+        "LOW": 99,
+        "MEDIUM": 105,
+        "HIGH": 54,
+        "CRITICAL": 0
+      },
+      "report_sha256": "sha256:9632f3aca29adc900dc6e8fbc34caa3bc7d33ababd56c3f5ef46b1b1bffe5f38",
+      "image_config_digest": "sha256:8b86f43e87b16ddd78925c550702aca2416ea19277c422779d7594a4bdd63b15"
+    },
+    "frontend": {
+      "status": "scanned",
+      "severity": {
+        "UNKNOWN": 0,
+        "LOW": 0,
+        "MEDIUM": 5,
+        "HIGH": 1,
+        "CRITICAL": 0
+      },
+      "report_sha256": "sha256:0c4d36c0c02e92a298f7ee2e53a6fbe9bee207e87cc9b647ab635fa9fe2cb654",
+      "image_config_digest": "sha256:e8319450875c1f4881a9b8c82fdd46bc96776b893f70c436fe09044a18bd3a91"
+    },
+    "frontend-lock": {
+      "status": "scanned",
+      "severity": {
+        "UNKNOWN": 0,
+        "LOW": 0,
+        "MEDIUM": 2,
+        "HIGH": 0,
+        "CRITICAL": 0
+      },
+      "report_sha256": "sha256:8e8a15da501c0401f9eaf400eb8bb1cfab74db15e6bdcd6cbc70ff788b7aaef3"
+    }
+  },
+  "state": "validated",
+  "registry_verified": false,
+  "production_approved": false,
+  "production_blockers": [
+    "INIT-001: autenticaci\u00f3n persistente, demo/JWT y RBAC",
+    "INIT-001: PostgreSQL fail-closed, /ready y permisos efectivos",
+    "INIT-001: autorizaci\u00f3n de comprobantes",
+    "INIT-005: S3 real, activaci\u00f3n de ALT-06 y continuidad en EC2",
+    "INIT-007/008: arquitectura aprobada, despliegue, rollback y go-live"
+  ],
+  "configuration": {
+    ".github/workflows/ci.yml": "sha256:b442b9a973c6d46a1e70002bccbdad6e9f93c9607a2aecee9fd512ad65a7215d",
+    ".github/workflows/publish.yml": "sha256:a27ced6b4ea714a1a3a55875efee05618ef271b5c300677e878d3717ea548ae0",
+    "deploy/docker-compose.yml": "sha256:a8b01bbcbd151f6d883b46afd0364a2fcdb3d41b33a7cddd2dc37ad2028a36fa",
+    "deploy/docker-compose.dev.yml": "sha256:7beb7f898aef11afd9ffe90d723051818ac701c53d8813336ce156e3f1050c6c",
+    "deploy/Caddyfile": "sha256:958a14eb22d622f53a8c0baea032f2d4228cb6ba64340a6e6bcb41e43fec3836",
+    "deploy/Caddyfile.dev": "sha256:eaa5e6d2fc53c5a7c07584c0b5d0d39188e030e97cba79f979c40e1c11aef842",
+    "deploy/Caddyfile.common": "sha256:09f2a0a12fe371066e6d2f3252830652693bf2087bb805a917b50fac75db6f73",
+    "monitoring/prometheus/prometheus.yml": "sha256:2f2c4c85ec9ff834171bdda42d216b707cc626bf369358703c251be5a90afabd",
+    "monitoring/grafana/provisioning/alerting/rules.yml": "sha256:123002b4a4820e04d63cf7458406d9675a0d9dafa322298f3ad8856ba0599c1e",
+    "backend/Dockerfile": "sha256:841926f79d1335e0eb8a270bdf9759390f8dac6ce3a3327a3650e7126da64e3c",
+    "frontend/Dockerfile": "sha256:a1fb1b74683e17f94828bda2fb4d60bd7cc50c7c5ccbbc6c82ea55cb0b2dde8b",
+    "frontend/package-lock.json": "sha256:608642356ca2a1c1aa57c0228227af49a4153c221844c0e2c5496fbe29e9ec35",
+    "frontend/tests-e2e/package-lock.json": "sha256:52e1133d8fcde59d90d175b5488e7878827024d99ab8fc00fe6e07f3349d5c17"
+  },
+  "backend": {
+    "image": "ghcr.io/joan2022laurente/minimarket-stock-ia-backend:candidate-8a049c47e2c276616c45da60b392ddeb0ac1fd52-amd64",
+    "digest": "sha256:19942c45a88f672e0409cc0e8d669956e0fe2cbc134398d7469f93517f2c3a5c",
+    "config_digest": "sha256:8b86f43e87b16ddd78925c550702aca2416ea19277c422779d7594a4bdd63b15",
+    "archive_sha256": "sha256:d2166677acbd26e6f1a199734400c7d079acddeb221ebf11eff1441ffa356758"
+  },
+  "frontend": {
+    "image": "ghcr.io/joan2022laurente/minimarket-stock-ia-frontend:candidate-8a049c47e2c276616c45da60b392ddeb0ac1fd52-amd64",
+    "digest": "sha256:8a40e541261179d2028a7614feaf7ee372798ddc03e276530d6edad25b4345cd",
+    "config_digest": "sha256:e8319450875c1f4881a9b8c82fdd46bc96776b893f70c436fe09044a18bd3a91",
+    "archive_sha256": "sha256:9d8728445c1820b897da9da9b377b5d8e909f01c0c2a7b9444bb8187ef713d81"
+  }
+}

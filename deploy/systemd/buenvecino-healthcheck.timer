@@ -1,0 +1,10 @@
+[Unit]
+Description=Sondeo funcional de Buen Vecino cada 15 segundos
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=15s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

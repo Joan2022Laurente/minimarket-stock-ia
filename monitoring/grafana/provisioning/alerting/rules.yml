@@ -1,0 +1,297 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: Infraestructura
+    folder: Buen Vecino
+    interval: 30s
+    rules:
+      - uid: buenvecino-alt-01
+        title: ALT-01 CPU elevada
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: buenvecino-prometheus
+            relativeTimeRange: {from: 900, to: 0}
+            model:
+              datasource: {type: prometheus, uid: buenvecino-prometheus}
+              refId: A
+              expr: >-
+                100 * (1 - avg by (instance,environment) (rate(node_cpu_seconds_total{job="node-exporter",mode="idle"}[5m])))
+              instant: true
+              range: false
+              editorMode: code
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange: {from: 0, to: 0}
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              type: threshold
+              refId: B
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [80]}
+                  operator: {type: and}
+                  query: {params: [A]}
+                  reducer: {type: last, params: []}
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "CPU utilizada superior al 80 %"
+          description: "Promedio móvil de cinco minutos para los CPU de la instancia Linux."
+        labels:
+          codigo: ALT-01
+          severity: warning
+        isPaused: false
+      - uid: buenvecino-alt-02
+        title: ALT-02 Memoria elevada
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: buenvecino-prometheus
+            relativeTimeRange: {from: 900, to: 0}
+            model:
+              datasource: {type: prometheus, uid: buenvecino-prometheus}
+              refId: A
+              expr: >-
+                100 * (1 - node_memory_MemAvailable_bytes{job="node-exporter"} / node_memory_MemTotal_bytes{job="node-exporter"})
+              instant: true
+              range: false
+              editorMode: code
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange: {from: 0, to: 0}
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              type: threshold
+              refId: B
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [85]}
+                  operator: {type: and}
+                  query: {params: [A]}
+                  reducer: {type: last, params: []}
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "RAM utilizada superior al 85 %"
+          description: "Usa MemAvailable y MemTotal de Node Exporter."
+        labels:
+          codigo: ALT-02
+          severity: warning
+        isPaused: false
+      - uid: buenvecino-alt-03
+        title: ALT-03 Disco elevado
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: buenvecino-prometheus
+            relativeTimeRange: {from: 900, to: 0}
+            model:
+              datasource: {type: prometheus, uid: buenvecino-prometheus}
+              refId: A
+              expr: >-
+                (100 * (1 - node_filesystem_avail_bytes{job="node-exporter",fstype=~"ext[234]|xfs|btrfs|zfs",mountpoint=~"/|/var/lib|/var/lib/docker|/srv/buenvecino"} / (node_filesystem_size_bytes{job="node-exporter",fstype=~"ext[234]|xfs|btrfs|zfs",mountpoint=~"/|/var/lib|/var/lib/docker|/srv/buenvecino"} > 0))) and on(instance,device,mountpoint) (node_filesystem_readonly{job="node-exporter",fstype=~"ext[234]|xfs|btrfs|zfs",mountpoint=~"/|/var/lib|/var/lib/docker|/srv/buenvecino"} == 0)
+              instant: true
+              range: false
+              editorMode: code
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange: {from: 0, to: 0}
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              type: threshold
+              refId: B
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [80]}
+                  operator: {type: and}
+                  query: {params: [A]}
+                  reducer: {type: last, params: []}
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: "Filesystem observado por encima del 80 %"
+          description: "Examina filesystems seleccionados, con capacidad positiva y de lectura/escritura. Revisar el montaje efectivo en EC2."
+        labels:
+          codigo: ALT-03
+          severity: warning
+        isPaused: false
+  - orgId: 1
+    name: Disponibilidad
+    folder: Buen Vecino
+    interval: 30s
+    rules:
+      - uid: buenvecino-alt-04
+        title: ALT-04 Servicio indisponible
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: buenvecino-prometheus
+            relativeTimeRange: {from: 900, to: 0}
+            model:
+              datasource: {type: prometheus, uid: buenvecino-prometheus}
+              refId: A
+              expr: >-
+                label_replace(1 - up{job=~"fastapi-backend|node-exporter|cadvisor"}, "signal", "scrape", "job", ".+")
+                or label_replace((1 - minimarket_probe_success{job="node-exporter",check="spa"}) and on(instance,check) (time() - minimarket_probe_timestamp_seconds{job="node-exporter",check="spa"} <= 45), "signal", "spa_http", "check", ".+")
+                or label_replace((time() - minimarket_probe_timestamp_seconds{job="node-exporter",check="spa"} > bool 45), "signal", "spa_sondeo_antiguo", "check", ".+")
+              instant: true
+              range: false
+              editorMode: code
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange: {from: 0, to: 0}
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              type: threshold
+              refId: B
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [0]}
+                  operator: {type: and}
+                  query: {params: [A]}
+                  reducer: {type: last, params: []}
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Falla de scrape, de la SPA o sondeo desactualizado"
+          description: "El label signal diferencia scrape, spa_http y spa_sondeo_antiguo. El label job identifica el target de scrape. PostgreSQL queda pendiente de /ready."
+        labels:
+          codigo: ALT-04
+          severity: critical
+        isPaused: false
+  - orgId: 1
+    name: Aplicación
+    folder: Buen Vecino
+    interval: 30s
+    rules:
+      - uid: buenvecino-alt-05
+        title: ALT-05 Registro de ventas lento
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: buenvecino-prometheus
+            relativeTimeRange: {from: 900, to: 0}
+            model:
+              datasource: {type: prometheus, uid: buenvecino-prometheus}
+              refId: A
+              expr: >-
+                (histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job="fastapi-backend",method="POST",endpoint="/api/v1/ventas"}[15m]))) >= bool 1) and on() (sum(increase(http_request_duration_seconds_count{job="fastapi-backend",method="POST",endpoint="/api/v1/ventas"}[15m])) >= 10)
+              instant: true
+              range: false
+              editorMode: code
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange: {from: 0, to: 0}
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              type: threshold
+              refId: B
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [0]}
+                  operator: {type: and}
+                  query: {params: [A]}
+                  reducer: {type: last, params: []}
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "P95 del POST de ventas igual o superior a un segundo"
+          description: "Requiere 10 observaciones en 15 minutos. Incluye todas las respuestas HTTP del POST, sin inferir ventas exitosas."
+        labels:
+          codigo: ALT-05
+          severity: warning
+        isPaused: false
+      - uid: buenvecino-alt-07
+        title: ALT-07 Errores HTTP elevados
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: buenvecino-prometheus
+            relativeTimeRange: {from: 900, to: 0}
+            model:
+              datasource: {type: prometheus, uid: buenvecino-prometheus}
+              refId: A
+              expr: >-
+                (100 * (sum(increase(http_requests_total{job="fastapi-backend",status=~"5.."}[5m])) or on() (0 * sum(increase(http_requests_total{job="fastapi-backend"}[5m])))) / (sum(increase(http_requests_total{job="fastapi-backend"}[5m])) > 0)) and on() (sum(increase(http_requests_total{job="fastapi-backend"}[5m])) >= 20)
+              instant: true
+              range: false
+              editorMode: code
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange: {from: 0, to: 0}
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              type: threshold
+              refId: B
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [2]}
+                  operator: {type: and}
+                  query: {params: [A]}
+                  reducer: {type: last, params: []}
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Más del 2 % de 5xx en FastAPI"
+          description: "Requiere 20 solicitudes en cinco minutos. Las respuestas de Caddy quedan fuera de esta métrica."
+        labels:
+          codigo: ALT-07
+          severity: warning
+        isPaused: false
+  - orgId: 1
+    name: Continuidad
+    folder: Buen Vecino
+    interval: 1m
+    rules:
+      - uid: buenvecino-alt-06
+        title: ALT-06 Respaldo desactualizado
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: buenvecino-prometheus
+            relativeTimeRange: {from: 900, to: 0}
+            model:
+              datasource: {type: prometheus, uid: buenvecino-prometheus}
+              refId: A
+              expr: >-
+                ((time() - max(backup_last_success_timestamp{job="node-exporter"} > 0)) or on() (absent(backup_last_success_timestamp{job="node-exporter"} > 0) * 93601)) and on() (min(up{job="node-exporter"}) == 1)
+              instant: true
+              range: false
+              editorMode: code
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange: {from: 0, to: 0}
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              type: threshold
+              refId: B
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [93600]}
+                  operator: {type: and}
+                  query: {params: [A]}
+                  reducer: {type: last, params: []}
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 0s
+        annotations:
+          summary: "Último respaldo verificado ausente o con más de 26 horas"
+          description: "Pausada hasta INIT-005. Solo se usa la métrica textfile de Node Exporter. Una caída del exporter corresponde a ALT-04."
+        labels:
+          codigo: ALT-06
+          severity: critical
+        isPaused: true

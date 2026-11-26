@@ -1,0 +1,50 @@
+INIT-005 | PostgreSQL 18.0 desechable, red deshabilitada y almacenamiento fixture
+PASS bash -n
+PASS argumentos salida=2
+PASS destino-no-permitido salida=2
+2026-11-26T15:17:36Z exportacion_ms=128
+2026-11-26T15:17:36Z validacion_ms=132 bytes=44582 sha256=947ac98c049de0fa04f0c693441b4499af46595ded40e7e8f2a727fa7b04e18a captura_utc=2026-11-26T15:17:36Z
+2026-11-26T15:17:36Z objeto_verificado almacenamiento=fixture clave=backups/daily/2026-11-26/20261126T151736Z-7XirMN71.dump version=fixture-947ac98c049de0fa04f0c693441b4499af46595ded40e7e8f2a727fa7b04e18a
+2026-11-26T15:17:36Z objeto_verificado almacenamiento=fixture clave=backups/weekly/2026-W48/20261126T151736Z-7XirMN71.dump version=fixture-947ac98c049de0fa04f0c693441b4499af46595ded40e7e8f2a727fa7b04e18a
+2026-11-26T15:17:36Z Respaldo integral de laboratorio verificado en almacenamiento simulado.
+# TYPE backup_last_success_timestamp gauge
+backup_last_success_timestamp 1795706256
+# TYPE backup_last_size_bytes gauge
+backup_last_size_bytes 44582
+PASS calendario diario/semanal y SHA-256 independiente
+PASS destino-sin-marca salida=3
+PASS destino-sin-confirmacion salida=3
+PASS version-incorrecta salida=4
+PASS checksum-incorrecto salida=4
+PASS archivo-remoto-corrupto salida=4
+2026-11-26T15:17:37Z destino_laboratorio=buenvecino_restore_init005 via_socket
+2026-11-26T15:17:37Z validacion_descarga_ms=206 bytes=44582 sha256=947ac98c049de0fa04f0c693441b4499af46595ded40e7e8f2a727fa7b04e18a captura_utc=2026-11-26T15:17:36Z version=fixture-947ac98c049de0fa04f0c693441b4499af46595ded40e7e8f2a727fa7b04e18a
+2026-11-26T15:17:38Z restauracion_ms=110
+2026-11-26T15:17:38Z comprobaciones_ms=52 Restauración de laboratorio verificada.
+PASS destino-con-objetos salida=3
+PASS conteos_origen_igual_destino
+perfiles=1
+categorias=1
+proveedores=1
+productos=1
+ventas=1
+detalle_ventas=1
+movimientos_inventario=1
+predicciones=1
+ticket_relacionado=1
+ventas_id_seq=1:true
+funciones=2
+venta_funcional=true
+2026-11-26T15:17:38Z exportacion_ms=135
+2026-11-26T15:17:38Z validacion_ms=163 bytes=44582 sha256=ef471ba879795f6c60734c8efd9a322adcbe4af93c1b50dceab832f45233f84d captura_utc=2026-11-26T15:17:38Z
+2026-11-26T15:17:38Z objeto_verificado almacenamiento=fixture clave=backups/daily/2026-11-26/20261126T151738Z-Du7EvOFY.dump version=fixture-ef471ba879795f6c60734c8efd9a322adcbe4af93c1b50dceab832f45233f84d
+2026-11-26T15:17:38Z Respaldo integral de laboratorio verificado en almacenamiento simulado.
+PASS siguiente respaldo diario conserva el semanal vigente
+PASS transferencia salida=4
+PASS verificacion-remota salida=4
+PASS concurrencia salida=3
+PASS dump-vacio salida=4
+PASS dump-corrupto salida=4
+PASS dependencia-aws-ausente salida=3
+PASS credenciales-libpq-ausentes salida=3
+PASS timestamp, tamaño y archivo textfile idénticos después de fallos. Temporales limpios.

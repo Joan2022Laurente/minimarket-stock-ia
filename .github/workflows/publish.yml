@@ -1,0 +1,141 @@
+name: Publicar candidato en GHCR
+
+on:
+  workflow_dispatch:
+    inputs:
+      ci_run_id:
+        description: ID de un CI exitoso en main para el mismo SHA
+        type: string
+        required: true
+      architecture:
+        description: Plataforma del artefacto OCI de ese CI
+        type: choice
+        options: [amd64, arm64]
+        default: amd64
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ghcr-candidates-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  verify-ci:
+    name: Verificar ejecución de CI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      attempt: ${{ steps.ci.outputs.attempt }}
+    steps:
+      - id: ci
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_RUN_ID: ${{ inputs.ci_run_id }}
+        run: |
+          if [[ "$GITHUB_REF" != refs/heads/main || ! "$CI_RUN_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo 'Seleccione main y un identificador numérico de CI.'
+            exit 1
+          fi
+          attempt=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CI_RUN_ID" |
+            jq -er --arg sha "$GITHUB_SHA" --arg repo "$GITHUB_REPOSITORY" '
+              select(.conclusion == "success" and .status == "completed"
+                and .path == ".github/workflows/ci.yml"
+                and (.head_repository.full_name | ascii_downcase) == ($repo | ascii_downcase)
+                and .head_branch == "main" and .head_sha == $sha
+                and (.event == "push" or .event == "workflow_dispatch"))
+              | .run_attempt')
+          [[ "$attempt" =~ ^[1-9][0-9]*$ ]]
+          printf 'attempt=%s\n' "$attempt" >> "$GITHUB_OUTPUT"
+
+  publish:
+    name: Publicar exactamente los OCI verificados
+    needs: verify-ci
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: ghcr-candidates
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+    steps:
+      - name: Exigir autorización explícita del SHA
+        env:
+          APPROVED_SHA: ${{ vars.GHCR_APPROVED_SHA }}
+        run: |
+          if [[ "$APPROVED_SHA" != "$GITHUB_SHA" ]]; then
+            echo 'El administrador debe autorizar este SHA en el entorno ghcr-candidates.'
+            exit 1
+          fi
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.ci_run_id }}
+          name: candidate-${{ github.sha }}-${{ inputs.architecture }}-${{ needs.verify-ci.outputs.attempt }}
+          path: ${{ runner.temp }}/candidate
+          digest-mismatch: error
+      - name: Comprobar manifiesto, reportes y archivos OCI
+        env:
+          CI_ARCH: ${{ inputs.architecture }}
+          CI_RUN_ID: ${{ inputs.ci_run_id }}
+          CI_ATTEMPT: ${{ needs.verify-ci.outputs.attempt }}
+        run: |
+          python3 deploy/scripts/candidate.py verify "$RUNNER_TEMP/candidate" \
+            --repository "$GITHUB_REPOSITORY" --sha "$GITHUB_SHA" --arch "$CI_ARCH" \
+            --run-id "$CI_RUN_ID" --attempt "$CI_ATTEMPT"
+      - name: Publicar, comprobar digests y generar manifiesto de release
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          umask 077
+          auth=$(mktemp -d "$RUNNER_TEMP/ghcr-auth.XXXXXXXX")
+          trap 'rm -f "$auth/auth.json"; rmdir "$auth"' EXIT
+          bundle="$RUNNER_TEMP/candidate"
+          skopeo=(docker run --rm -i
+            --mount "type=bind,source=$auth,target=/auth"
+            --mount "type=bind,source=$bundle,target=/work,readonly"
+            quay.io/skopeo/stable@sha256:a585e4a3b8a045baa87c7f1b2f940d6d299ebede85ab3f2419d52d2264eefc93)
+          printf '%s\n' "$GHCR_TOKEN" | "${skopeo[@]}" login --authfile /auth/auth.json \
+            --username "$GITHUB_ACTOR" --password-stdin ghcr.io
+          unset GHCR_TOKEN
+          declare -A refs digests missing
+          for part in backend frontend; do
+            refs[$part]=$(jq -er --arg part "$part" '.[$part].image' "$bundle/candidate.json")
+            digests[$part]=$(jq -er --arg part "$part" '.[$part].digest' "$bundle/candidate.json")
+            if "${skopeo[@]}" inspect --authfile /auth/auth.json --raw "docker://${refs[$part]}" \
+                > "$RUNNER_TEMP/ghcr-manifest" 2> "$RUNNER_TEMP/ghcr-error"; then
+              sum=$(sha256sum < "$RUNNER_TEMP/ghcr-manifest")
+              [[ "sha256:${sum%% *}" == "${digests[$part]}" ]] || { echo 'La etiqueta ya existe con otro digest.'; exit 1; }
+              missing[$part]=false
+            elif grep -Eiq 'manifest unknown|name unknown|repository does not exist' "$RUNNER_TEMP/ghcr-error"; then
+              missing[$part]=true
+            else
+              echo 'No se pudo determinar si la etiqueta existe. Revise los permisos de GHCR.'
+              exit 1
+            fi
+          done
+          for part in backend frontend; do
+            if [[ "${missing[$part]}" == true ]]; then
+              "${skopeo[@]}" copy --preserve-digests --dest-authfile /auth/auth.json \
+                "oci-archive:/work/$part.oci.tar" "docker://${refs[$part]}"
+            fi
+            sum=$("${skopeo[@]}" inspect --authfile /auth/auth.json --raw "docker://${refs[$part]}" | sha256sum)
+            [[ "sha256:${sum%% *}" == "${digests[$part]}" ]]
+            printf 'Verificado %s@%s\n' "${refs[$part]%:*}" "${digests[$part]}"
+          done
+          jq --arg id "$GITHUB_RUN_ID" --arg time "$(date -u +%FT%TZ)" '
+            .state = "published-candidate" | .registry_verified = true
+            | .publication = {run_id: ($id | tonumber), recorded_at: $time}
+          ' "$bundle/candidate.json" > "$RUNNER_TEMP/release.json"
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: release-${{ github.sha }}-${{ inputs.architecture }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release.json
+          retention-days: ${{ vars.CI_RELEASE_RETENTION_DAYS || '14' }}
+          if-no-files-found: error

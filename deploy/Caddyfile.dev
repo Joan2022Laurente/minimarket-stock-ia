@@ -1,0 +1,23 @@
+{
+	auto_https off
+}
+
+import Caddyfile.common
+
+http://localhost {
+	route {
+		import edge-security
+		import block-internal
+
+		@diagnostics path /health /health/ /ready /ready/ /docs /docs/* /redoc /redoc/*
+		handle @diagnostics {
+			import backend-response
+		}
+
+		import application-routes
+	}
+}
+
+http:// {
+	respond 404
+}

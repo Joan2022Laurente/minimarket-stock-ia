@@ -6,6 +6,12 @@
 *.key
 *.cert
 *.id_rsa
+*.pgpass
+.pgpass
+.pg_service.conf
+*.pgservice
+*.dump
+*.dump.meta
 
 # Python & FastAPI
 __pycache__/

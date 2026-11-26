@@ -2,12 +2,29 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const offlineShell = '/index.html?pwa-shell=1';
+
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'robots.txt'],
+      includeAssets: ['favicon.svg'],
+      workbox: {
+        navigateFallback: undefined,
+        cleanupOutdatedCaches: true,
+        // Use a separate key so the online shell is always revalidated.
+        manifestTransforms: [async (manifest) => ({
+          manifest: manifest.map((entry) => entry.url === 'index.html' ? { ...entry, url: offlineShell } : entry),
+          warnings: [],
+        })],
+        runtimeCaching: [{
+          urlPattern: ({ sameOrigin, request, url }) => sameOrigin && request.mode === 'navigate'
+            && /^\/(?:(?:login|inventario|ventas|predicciones)\/?)?$/i.test(url.pathname),
+          handler: 'NetworkOnly',
+          options: { precacheFallback: { fallbackURL: offlineShell } },
+        }],
+      },
       manifest: {
         name: 'Minimarket El Buen Vecino POS',
         short_name: 'El Buen Vecino',
