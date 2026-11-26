@@ -12,6 +12,7 @@
 *.pgservice
 *.dump
 *.dump.meta
+infra/aws/infrastructure-contract.local.json
 
 # Python & FastAPI
 __pycache__/

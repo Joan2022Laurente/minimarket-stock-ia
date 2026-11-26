@@ -175,12 +175,60 @@ def verify(work: Path, args) -> None:
     print(f'PASS contrato candidato ({doc["state"]}) y digests OCI')
 
 
+def verify_release(doc: dict, repository: str, revision: str, arch: str, publish_run: int) -> dict[str, str]:
+    """Comprueba un release.json de un run de publicación conocido, sin consultar GHCR."""
+    require(re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository), "Repositorio inválido")
+    require(re.fullmatch(r"[0-9a-f]{40}", revision) and arch in ("amd64", "arm64"),
+            "SHA o arquitectura inválidos")
+    require(type(doc["schema_version"]) is int and doc["schema_version"] == 1 and doc["environment"] == "candidate"
+            and doc["state"] == "published-candidate" and doc["registry_verified"] is True
+            and doc["production_approved"] is False, "Se requiere un candidato publicado para laboratorio")
+    require(doc["repository"].lower() == repository.lower() and doc["git_sha"] == revision
+            and doc["architecture"] == f"linux/{arch}", "El candidato no coincide con repositorio, SHA o arquitectura")
+    require(type(doc["publication"]["run_id"]) is int and doc["publication"]["run_id"] == publish_run > 0,
+            "El run de publicación no coincide")
+    for timestamp in (doc["generated_at"], doc["publication"]["recorded_at"]):
+        require(timestamp.endswith("Z") and datetime.fromisoformat(timestamp).utcoffset().total_seconds() == 0,
+                "Fecha de release debe usar UTC")
+    build = doc["build"]
+    require(build["source"] == "github-actions"
+            and all(type(build[key]) is int and build[key] > 0 for key in ("run_id", "attempt"))
+            and doc["tests"]["status"] == "passed", "El origen o resultado CI no cumple el contrato")
+    require(set(doc["configuration"]) == set(CONFIG)
+            and all(digest_file(ROOT / file) == doc["configuration"][file] for file in CONFIG),
+            "Los archivos del checkout difieren de la configuración probada")
+    require(set(doc["scan"]) == set(REPORTS), "Faltan reportes del candidato")
+    for report in doc["scan"].values():
+        require(report["status"] == "scanned" and set(report["severity"]) == set(SEVERITIES)
+                and all(type(count) is int and count >= 0 for count in report["severity"].values())
+                and report["severity"]["CRITICAL"] == 0, "Escaneo incompleto o con CRITICAL")
+    refs = {}
+    for component in COMPONENTS:
+        image = doc[component]
+        path = f"ghcr.io/{repository.lower()}-{component}"
+        tag = f'candidate-{revision}-{arch}-{build["run_id"]}-{build["attempt"]}'
+        require(image["image"] == f"{path}:{tag}", f"Etiqueta de origen inválida para {component}")
+        require(all(re.fullmatch(r"sha256:[a-f0-9]{64}", image[field])
+                    for field in ("digest", "config_digest", "archive_sha256")), f"Digests inválidos para {component}")
+        require(doc["scan"][component]["image_config_digest"] == image["config_digest"],
+                f"Escaneo de otra configuración para {component}")
+        refs[f"{component.upper()}_IMAGE"] = f'{path}@{image["digest"]}'
+    return refs
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     inspect = commands.add_parser("inspect")
     inspect.add_argument("archive", type=Path)
     inspect.add_argument("--docker-archive", type=Path, help="Verificar configuración y docker image inspect desde stdin")
+    release = commands.add_parser("verify-release", help="Verificar un release.json candidato para laboratorio")
+    release.add_argument("release", type=Path)
+    release.add_argument("--repository", required=True)
+    release.add_argument("--sha", required=True)
+    release.add_argument("--arch", choices=("amd64", "arm64"), required=True)
+    release.add_argument("--publish-run", type=int, required=True)
+    release.add_argument("--purpose", choices=("laboratory", "production"), default="laboratory")
     for name in ("create", "verify"):
         command = commands.add_parser(name)
         command.add_argument("work", type=Path)
@@ -208,9 +256,15 @@ def main() -> None:
             print(f'Candidato: {doc["state"]}')
             if args.source == "github-actions" and doc["state"] != "validated":
                 parser.exit(1, "CRITICAL, escaneo incompleto o pruebas pendientes bloquean la publicación.\n")
+        elif args.command == "verify-release":
+            if args.purpose == "production":
+                parser.exit(3, "BLOCKED promoción productiva: INIT-001 pendiente.\n")
+            doc = json.loads(args.release.read_text(encoding="utf-8"))
+            refs = verify_release(doc, args.repository, args.sha, args.arch, args.publish_run)
+            print(json.dumps(refs))
         else:
             verify(args.work, args)
-    except (KeyError, OSError, ValueError, tarfile.TarError) as error:
+    except (KeyError, OSError, ValueError, TypeError, AttributeError, tarfile.TarError) as error:
         parser.exit(1, f"FAIL contrato candidato: {error}\n")
 
 

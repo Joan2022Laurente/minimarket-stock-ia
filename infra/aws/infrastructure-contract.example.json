@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "scope": "private-laboratory",
+  "aws": {
+    "region": null,
+    "budget_limit_monthly": null,
+    "budget_currency": null,
+    "budget_alerts_configured": null
+  },
+  "ec2": {
+    "instance_id": null,
+    "instance_type": null,
+    "ami_id": null,
+    "architecture": null,
+    "os_id": null,
+    "os_version": null,
+    "vcpus": null,
+    "ram_mib": null,
+    "min_available_disk_gib": null
+  },
+  "ebs": {
+    "volume_id": null,
+    "capacity_gib": null,
+    "type": null,
+    "encrypted": null
+  },
+  "network": {
+    "vpc_id": null,
+    "vpc_cidr": null,
+    "subnet_id": null,
+    "subnet_cidr": null,
+    "subnet_kind": null,
+    "private_subnet_id": null,
+    "internet_gateway_id": null,
+    "route_table_id": null,
+    "security_group_ids": null,
+    "lab_ingress": null,
+    "egress_reviewed": null
+  },
+  "access": {
+    "method": null,
+    "ssh_admin_cidr": null,
+    "public_ipv4": null,
+    "imds_http_tokens": null,
+    "instance_profile_arn": null
+  },
+  "s3": {
+    "backup_lab_bucket": null,
+    "region": null,
+    "block_public_access": null,
+    "encryption": null,
+    "versioning": null,
+    "lifecycle_reviewed": null
+  },
+  "dns": {
+    "approved_hostname": null,
+    "provider": null
+  },
+  "supabase": {
+    "host": null,
+    "mode": null,
+    "port": null
+  },
+  "ghcr": {
+    "repository": null,
+    "visibility": null,
+    "pull_method": null,
+    "published_release_run_id": null
+  }
+}

@@ -1,0 +1,32 @@
+INIT-007A | Revisión de base genni@6c14322 | 2026-11-26
+Working tree limpio al inicio. HEAD y origin/genni sin divergencia (0/0).
+API pública de GitHub confirmó el mismo SHA. CI #1 en github-ci-1.json.
+
+PASS 11 pruebas dirigidas de contrato, IMDS simulado, seguridad de puertos y release.
+PASS bash -n y ShellCheck v0.10.0 para ec2-preflight.sh.
+PASS plantilla estructural y exit 3 por datos pendientes.
+PASS preflight en contenedor desechable Debian 13/Python 3.12.16, amd64,
+sin red ni socket Docker. Detectó dependencias y directorios ausentes.
+CPU/RAM/disco observados pertenecen al entorno local, no a EC2.
+PASS se rechazó el candidate-local.json de INIT-006 como release publicado.
+
+Docker Desktop Engine 28.5.1 linux/amd64, Compose v2.40.2.
+PASS config base y dev en proyecto aislado, con env ficticio.
+PASS dos redes, cinco volúmenes y solo 8080/3000 en loopback para dev.
+PASS Caddy dev y candidato HTTPS validados sin red. Preflight inválido 78.
+PASS nginx -t y Config.User vacío observados en el candidato frontend local.
+PASS promtool con configuración efectiva y fixtures de reglas.
+PASS configuración de tres dashboards, 54 consultas, siete reglas y ALT-06 pausada.
+PASS inspección estática de cuatro unidades systemd, calendario y usuarios.
+PASS imagen backend construida desde la revisión actual devuelve 78
+en --network none, sin iniciar el proceso productivo.
+
+Trivy local de INIT-006: 54 ocurrencias HIGH Debian, 14 CVE distintos,
+36 ocurrencias de cuatro CVE de util-linux. DS-0002 en frontend.
+CI remoto: pasos de Trivy y política CRITICAL en success; conteos remotos
+sin verificar debido a HTTP 401 al descargar images-amd64-1.
+GHCR: ambos intentos anónimos 403. No acreditan presencia o ausencia de paquetes.
+
+NOT RUN inspección IAM/IMDS real, S3, Supabase, DNS/ACME, medición,
+laboratorio EC2 o timers en el host. Sin datos de infraestructura ni cuenta.
+No se iniciaron servicios Compose ni se modificaron recursos AWS.

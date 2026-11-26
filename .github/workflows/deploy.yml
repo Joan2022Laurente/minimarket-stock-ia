@@ -1,0 +1,193 @@
+name: Verificar release para despliegue
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_run_id:
+        description: ID de publicación exitosa en main
+        type: string
+        required: true
+      git_sha:
+        description: SHA completo del release y de la configuración
+        type: string
+        required: true
+      architecture:
+        description: Plataforma OCI
+        type: choice
+        options: [amd64, arm64]
+        required: true
+      target:
+        description: Entorno GitHub autorizado
+        type: choice
+        options: [ec2-lab, production]
+        required: true
+      operation:
+        description: Operación solicitada
+        type: choice
+        options: [verify, deploy, rollback]
+        default: verify
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.repository }}-${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  provenance:
+    name: Verificar publicación, integridad y digests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+    outputs:
+      release_id: ${{ steps.run.outputs.release_id }}
+    steps:
+      - name: Identificar el artefacto de publicación
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.publish_run_id }}
+          RELEASE_SHA: ${{ inputs.git_sha }}
+          PLATFORM: ${{ inputs.architecture }}
+          TARGET: ${{ inputs.target }}
+          OPERATION: ${{ inputs.operation }}
+        shell: bash
+        run: |
+          [[ "$GITHUB_REF" == refs/heads/main && "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ && "$RELEASE_SHA" == "$GITHUB_SHA" ]]
+          [[ "$RUN_ID" =~ ^[1-9][0-9]{0,17}$ && "$PLATFORM" =~ ^(amd64|arm64)$ ]]
+          [[ "$TARGET" =~ ^(ec2-lab|production)$ && "$OPERATION" =~ ^(verify|deploy|rollback)$ ]]
+          workflow=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/publish.yml" --jq '.id')
+          attempt=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" |
+            jq -er --arg repo "$GITHUB_REPOSITORY" --arg sha "$RELEASE_SHA" --arg workflow "$workflow" '
+              select(.status == "completed" and .conclusion == "success" and .event == "workflow_dispatch"
+                and .head_branch == "main" and .head_sha == $sha and .path == ".github/workflows/publish.yml"
+                and (.workflow_id | tostring) == $workflow
+                and (.head_repository.full_name | ascii_downcase) == ($repo | ascii_downcase))
+              | .run_attempt')
+          [[ "$attempt" =~ ^[1-9][0-9]*$ ]]
+          artifact="release-$RELEASE_SHA-$PLATFORM-$attempt"
+          gh api --method GET "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts" -f name="$artifact" |
+            jq -e --arg name "$artifact" --arg sha "$RELEASE_SHA" --arg run "$RUN_ID" '
+              .total_count == 1 and (.artifacts[0] | .name == $name and .expired == false
+                and (.digest | test("^sha256:[0-9a-f]{64}$"))
+                and .workflow_run.head_sha == $sha and (.workflow_run.id | tostring) == $run)' >/dev/null
+          printf 'artifact=%s\nrelease_id=%s/%s/%s/%s\n' "$artifact" "$RELEASE_SHA" "$PLATFORM" "$RUN_ID" "$attempt" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.publish_run_id }}
+          name: ${{ steps.run.outputs.artifact }}
+          path: ${{ runner.temp }}/verified-release
+          digest-mismatch: error
+      - name: Verificar contrato, configuración e intento de CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.publish_run_id }}
+          PLATFORM: ${{ inputs.architecture }}
+        shell: bash
+        run: |
+          release="$RUNNER_TEMP/verified-release/release.json"
+          [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" && -f "$release" && ! -L "$release" ]]
+          python3 deploy/scripts/candidate.py verify-release "$release" \
+            --repository "$GITHUB_REPOSITORY" --sha "$GITHUB_SHA" --arch "$PLATFORM" --publish-run "$RUN_ID" \
+            > "$RUNNER_TEMP/release-refs.json"
+          ci_run=$(jq -er '.build.run_id' "$release")
+          ci_attempt=$(jq -er '.build.attempt' "$release")
+          [[ "$ci_run" =~ ^[1-9][0-9]{0,17}$ && "$ci_attempt" =~ ^[1-9][0-9]*$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ci_run/attempts/$ci_attempt" |
+            jq -e --arg repo "$GITHUB_REPOSITORY" --arg sha "$GITHUB_SHA" '
+              .conclusion == "success" and .status == "completed" and .path == ".github/workflows/ci.yml"
+                and (.event == "push" or .event == "workflow_dispatch")
+                and .head_sha == $sha and .head_branch == "main"
+                and (.head_repository.full_name | ascii_downcase) == ($repo | ascii_downcase)' >/dev/null
+      - name: Comparar manifiestos OCI con GHCR
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+          PLATFORM: ${{ inputs.architecture }}
+        shell: bash
+        run: |
+          umask 077
+          auth=$(mktemp -d "$RUNNER_TEMP/ghcr-read.XXXXXXXX")
+          trap 'rm -f "$auth/auth.json"; rmdir "$auth"' EXIT
+          skopeo=(docker run --rm -i --mount "type=bind,source=$auth,target=/auth"
+            quay.io/skopeo/stable@sha256:a585e4a3b8a045baa87c7f1b2f940d6d299ebede85ab3f2419d52d2264eefc93)
+          printf '%s\n' "$GHCR_TOKEN" | "${skopeo[@]}" login --authfile /auth/auth.json \
+            --username "$GITHUB_ACTOR" --password-stdin ghcr.io
+          unset GHCR_TOKEN
+          for part in backend frontend; do
+            ref=$(jq -er --arg key "${part^^}_IMAGE" '.[$key]' "$RUNNER_TEMP/release-refs.json")
+            manifest="$RUNNER_TEMP/$part-manifest.json"
+            "${skopeo[@]}" inspect --authfile /auth/auth.json --raw "docker://$ref" > "$manifest"
+            sum=$(sha256sum < "$manifest")
+            [[ "sha256:${sum%% *}" == "${ref##*@}" ]]
+            expected=$(jq -er --arg part "$part" '.[$part].config_digest' "$RUNNER_TEMP/verified-release/release.json")
+            jq -e --arg config "$expected" '.schemaVersion == 2 and .config.digest == $config' "$manifest" >/dev/null
+            "${skopeo[@]}" inspect --authfile /auth/auth.json --config "docker://$ref" |
+              jq -e --arg arch "$PLATFORM" --arg sha "$GITHUB_SHA" '
+                .os == "linux" and .architecture == $arch and .config.Labels["org.opencontainers.image.revision"] == $sha' >/dev/null
+            printf 'Verificado %s\n' "$ref"
+          done
+
+  protections:
+    name: Verificar protección real del entorno
+    needs: provenance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Exigir revisión independiente y rama main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ inputs.target }}
+        shell: bash
+        run: |
+          endpoint="repos/$GITHUB_REPOSITORY/environments/$TARGET"
+          if ! gh api "$endpoint" 2>/dev/null | jq -e '
+            .deployment_branch_policy.custom_branch_policies == true
+            and any(.protection_rules[]; .type == "required_reviewers"
+              and .prevent_self_review == true and (.reviewers | length > 0))' >/dev/null; then
+            echo 'BLOCKED: protección del entorno ausente o no verificable.'
+            exit 1
+          fi
+          if ! gh api --method GET "$endpoint/deployment-branch-policies" -f per_page=100 2>/dev/null | jq -e '
+            .total_count == 1 and .branch_policies[0].type == "branch" and .branch_policies[0].name == "main"' >/dev/null; then
+            echo 'BLOCKED: política exclusiva de main ausente o no verificable.'
+            exit 1
+          fi
+
+  remote-gate:
+    name: Comprobar aprobación humana y bloqueo remoto
+    if: inputs.operation != 'verify'
+    needs: [provenance, protections]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    environment: ${{ inputs.target }}
+    steps:
+      - name: Confirmar revisión independiente y mostrar prerrequisitos de EC2
+        env:
+          VERIFIED_RELEASE: ${{ needs.provenance.outputs.release_id }}
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ inputs.target }}
+        shell: bash
+        run: |
+          if [[ "$GITHUB_RUN_ATTEMPT" != 1 ]] || ! gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/approvals" |
+            jq -e --arg env "$TARGET" --arg actor "$GITHUB_ACTOR" '
+              any(.[]; .state == "approved" and (.user.login | type) == "string"
+                and (.user.login | ascii_downcase) != ($actor | ascii_downcase)
+                and any(.environments[]; .name == $env))' >/dev/null; then
+            echo 'BLOCKED: se requiere una aprobación independiente en un dispatch nuevo.'
+            exit 3
+          fi
+          printf 'Release verificado %s\n' "$VERIFIED_RELEASE"
+          echo 'BLOCKED: el transporte remoto requiere INIT-007B/007C y autorización; producción requiere el cierre de INIT-001.'
+          exit 3
